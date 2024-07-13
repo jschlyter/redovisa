@@ -1,16 +1,17 @@
 import logging
 import uuid
 from base64 import b64encode
+from json import JSONDecodeError
 from urllib.parse import quote, urljoin
 
 import httpx
 import redis
+from cryptojwt.jwt import JWT
+from cryptojwt.key_bundle import KeyBundle
+from cryptojwt.key_jar import KeyJar
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
-from jwcrypto.common import json_decode
-from jwcrypto.jwk import JWKSet
-from jwcrypto.jws import JWS
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, HttpUrl
 from uvicorn._types import (
     ASGI3Application,
     ASGIReceiveCallable,
@@ -24,6 +25,14 @@ class Session(BaseModel):
     email: str | None
     name: str | None
     claims: dict
+
+
+class OidcConfiguration(BaseModel):
+    issuer: HttpUrl
+    authorization_endpoint: HttpUrl
+    token_endpoint: HttpUrl
+    userinfo_endpoint: HttpUrl
+    jwks_uri: HttpUrl
 
 
 class OpenIDConnectException(Exception):
@@ -67,7 +76,22 @@ class OidcMiddleware:
 
         self.logger = logging.getLogger(__class__.__name__)
         self.session = httpx.Client()
-        self.update_configuration()
+
+        self._configuration = self.get_configuration()
+
+        self.key_bundle = KeyBundle(source=str(self.configuration.jwks_uri))
+        self.logger.debug("Read %d keys", len(self.key_bundle.keys()))
+        self.key_jar = KeyJar()
+        self.key_jar.add_kb(issuer_id=self.issuer, kb=self.key_bundle)
+        self.jwt = JWT(key_jar=self.key_jar, iss=self.issuer)
+
+    @property
+    def configuration(self) -> OidcConfiguration:
+        return self._configuration
+
+    def get_configuration(self) -> OidcConfiguration:
+        endpoints = self.to_dict_or_raise(self.session.get(self.configuration_uri))
+        return OidcConfiguration.model_validate(endpoints)
 
     async def __call__(
         self, scope: Scope, receive: ASGIReceiveCallable, send: ASGISendCallable
@@ -106,7 +130,7 @@ class OidcMiddleware:
         if not code:
             return RedirectResponse(self.get_auth_redirect_uri(callback_uri))
 
-        claims: dict[str, Any] = self.authenticate(code, callback_uri)
+        claims: dict[str, str | int] = self.authenticate(code, callback_uri)
 
         session = Session(
             name=claims.get("name"),
@@ -127,7 +151,7 @@ class OidcMiddleware:
         return RedirectResponse(self.logout_redirect_uri)
 
     async def get_session(self, request: Request) -> Session | None:
-        if session_id := request.cookies.get(self.cookie):
+        if session_id := request.cookies.get(self.cookie):  # noqa
             if session_data := self.redis_client.get(session_id):
                 return Session.model_validate_json(session_data)
 
@@ -140,33 +164,16 @@ class OidcMiddleware:
             return self.get_user_info(access_token=access_token)
         else:
             id_token = auth_token.get("id_token")
-            jwstoken = JWS()
-            jwstoken.deserialize(id_token)
-            jwstoken.verify(self.keyset)
-            return json_decode(jwstoken.payload)
+            jwt = self.jwt.unpack(id_token)
+            return dict(jwt)
 
     def get_auth_redirect_uri(self, callback_uri: str):
         return "{}?response_type=code&scope={}&client_id={}&redirect_uri={}".format(  # noqa
-            self.authorization_endpoint,
+            str(self.configuration.authorization_endpoint),
             self.scope,
             self.client_id,
             quote(callback_uri),
         )
-
-    def update_configuration(self) -> None:
-        endpoints = self.to_dict_or_raise(self.session.get(self.configuration_uri))
-        self.issuer = endpoints.get("issuer")
-        self.authorization_endpoint = endpoints.get("authorization_endpoint")
-        self.token_endpoint = endpoints.get("token_endpoint")
-        self.userinfo_endpoint = endpoints.get("userinfo_endpoint")
-        self.jwks_uri = endpoints.get("jwks_uri")
-        self.logger.debug("Read configuration from %s", self.configuration_uri)
-        self.update_keys()
-
-    def update_keys(self) -> None:
-        res = self.session.get(self.jwks_uri)
-        self.keyset = JWKSet.from_json(res.content)
-        self.logger.debug("Read keys from %s", self.jwks_uri)
 
     def get_auth_token(self, code: str, callback_uri: str) -> str:
         authstr = (
@@ -179,13 +186,17 @@ class OidcMiddleware:
             "code": code,
             "redirect_uri": callback_uri,
         }
-        response = self.session.post(self.token_endpoint, data=data, headers=headers)
+        response = self.session.post(
+            str(self.configuration.token_endpoint), data=data, headers=headers
+        )
         return self.to_dict_or_raise(response)
 
     def get_user_info(self, access_token: str) -> dict:
         bearer = f"Bearer {access_token}"
         headers = {"Authorization": bearer}
-        response = self.session.get(self.userinfo_endpoint, headers=headers)
+        response = self.session.get(
+            str(self.configuration.userinfo_endpoint), headers=headers
+        )
         return self.to_dict_or_raise(response)
 
     def to_dict_or_raise(self, response: httpx.Response) -> dict:
