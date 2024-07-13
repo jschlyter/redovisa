@@ -1,0 +1,27 @@
+<html>
+
+<head>
+<title>Redovisa</title>
+</head>
+
+
+<body>
+<h1>Redovisa utlägg</h1>
+
+<form action="/submit" method="post" enctype="multipart/form-data">
+
+  <label for="total_amount">Totalbelopp:</label><br/>
+  <input name="total_amount" type="text" required pattern="^\d+(\.\d{2})?$"/><br/>
+
+  <label for="account">Kontonummer:</label><br/>
+  <input name="account" type="text" required pattern="^\d+$"/><br/>
+
+  <label for="receipt">Kvitto:</label><br/>
+  <input name="receipt" type="file" required accept="image/*" capture="camera"/><br/>
+
+  <input type="submit" value="Skicka in">
+
+</form>
+</body>
+
+</html>
