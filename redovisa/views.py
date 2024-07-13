@@ -1,7 +1,7 @@
 import logging
 
 from fastapi import APIRouter, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse
 from fastapi_mail import FastMail, MessageSchema, MessageType
 
 logger = logging.getLogger(__name__)
@@ -12,12 +12,12 @@ router = APIRouter()
 
 @router.get("/")
 async def index(request: Request) -> HTMLResponse:
-    return HTMLResponse("index")
+    return request.app.templates.TemplateResponse(request=request, name="index.j2")
 
 
 @router.get("/expense")
 async def expense_form(request: Request) -> HTMLResponse:
-    return templates.TemplateResponse(request=request, name="expense.j2")
+    return request.app.templates.TemplateResponse(request=request, name="expense.j2")
 
 
 @router.get("/submit")
@@ -32,7 +32,7 @@ async def submit_expense(request: Request) -> HTMLResponse:
     contents = await form["receipt"].read()
     print(len(contents))
 
-    template = templates.get_template(name="mail.j2")
+    template = request.app.templates.get_template(name="mail.j2")
     html_body = template.render(form=form)
 
     settings = request.app.settings
@@ -54,4 +54,4 @@ async def submit_expense(request: Request) -> HTMLResponse:
         fm = FastMail(conf)
         await fm.send_message(message)
 
-    return templates.TemplateResponse(request=request, name="submitted.j2")
+    return request.app.templates.TemplateResponse(request=request, name="submitted.j2")
