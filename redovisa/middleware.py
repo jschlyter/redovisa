@@ -82,8 +82,10 @@ class OidcMiddleware:
         self.key_bundle = KeyBundle(source=str(self.configuration.jwks_uri))
         self.logger.debug("Read %d keys", len(self.key_bundle.keys()))
         self.key_jar = KeyJar()
-        self.key_jar.add_kb(issuer_id=self.issuer, kb=self.key_bundle)
-        self.jwt = JWT(key_jar=self.key_jar, iss=self.issuer)
+        self.key_jar.add_kb(
+            issuer_id=str(self.configuration.issuer), kb=self.key_bundle
+        )
+        self.jwt = JWT(key_jar=self.key_jar)
 
     @property
     def configuration(self) -> OidcConfiguration:
@@ -91,7 +93,9 @@ class OidcMiddleware:
 
     def get_configuration(self) -> OidcConfiguration:
         endpoints = self.to_dict_or_raise(self.session.get(self.configuration_uri))
-        return OidcConfiguration.model_validate(endpoints)
+        res = OidcConfiguration.model_validate(endpoints)
+        print(res)
+        return res
 
     async def __call__(
         self, scope: Scope, receive: ASGIReceiveCallable, send: ASGISendCallable
@@ -164,6 +168,7 @@ class OidcMiddleware:
             return self.get_user_info(access_token=access_token)
         else:
             id_token = auth_token.get("id_token")
+            breakpoint()
             jwt = self.jwt.unpack(id_token)
             return dict(jwt)
 

@@ -1,7 +1,7 @@
 import logging
 
 from fastapi import APIRouter, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi_mail import FastMail, MessageSchema, MessageType
 
 logger = logging.getLogger(__name__)
@@ -11,8 +11,8 @@ router = APIRouter()
 
 
 @router.get("/")
-async def index(request: Request) -> HTMLResponse:
-    return request.app.templates.TemplateResponse(request=request, name="index.j2")
+async def index(request: Request) -> RedirectResponse:
+    return RedirectResponse("/expense")
 
 
 @router.get("/expense")
