@@ -22,17 +22,17 @@ from uvicorn._types import (
 
 class Session(BaseModel):
     session_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    email: str | None
-    name: str | None
+    email: str
+    name: str
     claims: dict
 
 
 class OidcConfiguration(BaseModel):
-    issuer: HttpUrl
-    authorization_endpoint: HttpUrl
-    token_endpoint: HttpUrl
-    userinfo_endpoint: HttpUrl
-    jwks_uri: HttpUrl
+    issuer: str
+    authorization_endpoint: str
+    token_endpoint: str
+    userinfo_endpoint: str
+    jwks_uri: str
 
 
 class OpenIDConnectException(Exception):
@@ -56,7 +56,7 @@ class OidcMiddleware:
         excluded_paths: list[str] | None = None,
         redis_client: redis.Redis | None = None,
     ) -> None:
-        self.app: FastAPI = app
+        self.app = app
         self.configuration_uri = configuration_uri
         self.client_id = client_id
         self.client_secret = client_secret
@@ -79,12 +79,10 @@ class OidcMiddleware:
 
         self._configuration = self.get_configuration()
 
-        self.key_bundle = KeyBundle(source=str(self.configuration.jwks_uri))
-        self.logger.debug("Read %d keys", len(self.key_bundle.keys()))
+        self.key_bundle = KeyBundle(source=self.configuration.jwks_uri)
+        self.logger.debug("Read %d keys", len(self.key_bundle.keys() or []))
         self.key_jar = KeyJar()
-        self.key_jar.add_kb(
-            issuer_id=str(self.configuration.issuer), kb=self.key_bundle
-        )
+        self.key_jar.add_kb(issuer_id=self.configuration.issuer, kb=self.key_bundle)
         self.jwt = JWT(key_jar=self.key_jar)
 
     @property
@@ -149,7 +147,7 @@ class OidcMiddleware:
 
         return response
 
-    async def logout(self, request: Request) -> HTMLResponse:
+    async def logout(self, request: Request) -> RedirectResponse:
         if session_id := request.cookies.get(self.cookie):
             self.redis_client.delete(session_id)
         return RedirectResponse(self.logout_redirect_uri)
@@ -164,23 +162,22 @@ class OidcMiddleware:
     ) -> dict:
         auth_token = self.get_auth_token(code, callback_uri)
         if get_user_info:
-            access_token = auth_token.get("access_token")
+            access_token = auth_token["access_token"]
             return self.get_user_info(access_token=access_token)
         else:
-            id_token = auth_token.get("id_token")
-            breakpoint()
+            id_token = auth_token["id_token"]
             jwt = self.jwt.unpack(id_token)
             return dict(jwt)
 
     def get_auth_redirect_uri(self, callback_uri: str):
         return "{}?response_type=code&scope={}&client_id={}&redirect_uri={}".format(  # noqa
-            str(self.configuration.authorization_endpoint),
+            self.configuration.authorization_endpoint,
             self.scope,
             self.client_id,
             quote(callback_uri),
         )
 
-    def get_auth_token(self, code: str, callback_uri: str) -> str:
+    def get_auth_token(self, code: str, callback_uri: str) -> dict:
         authstr = (
             "Basic "
             + b64encode(f"{self.client_id}:{self.client_secret}".encode()).decode()
@@ -192,7 +189,7 @@ class OidcMiddleware:
             "redirect_uri": callback_uri,
         }
         response = self.session.post(
-            str(self.configuration.token_endpoint), data=data, headers=headers
+            self.configuration.token_endpoint, data=data, headers=headers
         )
         return self.to_dict_or_raise(response)
 
@@ -200,7 +197,7 @@ class OidcMiddleware:
         bearer = f"Bearer {access_token}"
         headers = {"Authorization": bearer}
         response = self.session.get(
-            str(self.configuration.userinfo_endpoint), headers=headers
+            self.configuration.userinfo_endpoint, headers=headers
         )
         return self.to_dict_or_raise(response)
 
