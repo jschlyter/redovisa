@@ -9,9 +9,9 @@ import redis
 from cryptojwt.jwt import JWT
 from cryptojwt.key_bundle import KeyBundle
 from cryptojwt.key_jar import KeyJar
-from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
-from pydantic import BaseModel, Field, HttpUrl
+from fastapi import Request
+from fastapi.responses import RedirectResponse
+from pydantic import BaseModel, Field
 from uvicorn._types import (
     ASGI3Application,
     ASGIReceiveCallable,
