@@ -2,22 +2,111 @@
 
 <head>
 <title>Redovisa</title>
+<link rel="stylesheet" href="/static/redovisa.css">
+<script type="text/javascript" src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script type="text/javascript" src="/static/functions.js"></script>
 </head>
 
+{% set pattern_number = "^\\d+(.\\d{2})?$" %}
+{% set pattern_account = "^\\d+$" %}
 
 <body>
 <h1>Redovisa utlägg</h1>
 
 <form action="/submit" method="post" enctype="multipart/form-data">
 
-  <label for="total_amount">Totalbelopp:</label><br/>
-  <input name="total_amount" type="text" required pattern="^\d+(\.\d{2})?$"/><br/>
+  <table>
 
-  <label for="account">Kontonummer:</label><br/>
-  <input name="account" type="text" required pattern="^\d+$"/><br/>
+  <tr>
+  <th></th>
+  <th>Konto</th>
+  <th>Beskrivning</th>
+  <th>Belopp</th>
+  </tr>
 
-  <label for="receipt">Kvitto:</label><br/>
-  <input name="receipt" type="file" required accept="image/*" capture="camera"/><br/>
+  <tr>
+  <td>4210</td>
+  <td><label for="cost4210">Grenkostnad Bäver</label></td>
+  <td><input name="text4210" type="text" maxlength="40"/></td>
+  <td><input name="cost4210" type="text" onblur="updateTotal()" class="amount" pattern="{{ pattern_number }}"/></td>
+  </tr>
+
+  <tr>
+  <td>4211</td>
+  <td><label for="cost4211">Grenkostnad Spårare</label></td>
+  <td><input name="text4211" type="text" maxlength="40"/></td>
+  <td><input name="cost4211" type="text" onblur="updateTotal()" class="amount" pattern="{{ pattern_number }}"/></td>
+  </tr>
+
+  <tr>
+  <td>4212</td>
+  <td><label for="cost4212">Grenkostnad Upptäckare</label></td>
+  <td><input name="text4212" type="text" maxlength="40"/></td>
+  <td><input name="cost4212" type="text" onblur="updateTotal()" class="amount" pattern="{{ pattern_number }}"/></td>
+  </tr>
+
+  <tr>
+  <td>4213</td>
+  <td><label for="cost4213">Grenkostnad Äventyrare</label></td>
+  <td><input name="text4213" type="text" maxlength="40"/></td>
+  <td><input name="cost4213" type="text" onblur="updateTotal()" class="amount" pattern="{{ pattern_number }}"/></td>
+  </tr>
+
+  <tr>
+  <td>4214</td>
+  <td><label for="cost4214">Grenkostnad Utmanare</label></td>
+  <td><input name="text4214" type="text" maxlength="40"/></td>
+  <td><input name="cost4214" type="text" onblur="updateTotal()" class="amount" pattern="{{ pattern_number }}"/></td>
+  </tr>
+
+  <tr>
+  <td>4610</td>
+  <td><label for="cost4610">Kostnader kårläger</label></td>
+  <td><input name="text4610" type="text" maxlength="40"/></td>
+  <td><input name="cost4610" type="text" onblur="updateTotal()" class="amount" pattern="{{ pattern_number }}"/></td>
+  </tr>
+
+  <tr>
+  <td>4611</td>
+  <td><label for="cost4611">Kostnader sommarläger</label></td>
+  <td><input name="text4611" type="text" maxlength="40"/></td>
+  <td><input name="cost4611" type="text" onblur="updateTotal()" class="amount" pattern="{{ pattern_number }}"/></td>
+  </tr>
+
+  <tr>
+  <td></td>
+  <td><label for="cost0000">Övrigt</label></td>
+  <td><input name="text0000" type="text" maxlength="40"/></td>
+  <td><input name="cost000" type="text" onblur="updateTotal()" class="amount" pattern="{{ pattern_number }}"/></td>
+  </tr>
+
+  <tr>
+  <td></td>
+  <td>Totalsumma</td>
+  <td></td>
+  <td><div id="total">0,00</div></td>
+  </tr>
+
+  </table>
+
+  <table>
+
+  <tr>
+  <td>Kvitto</td>
+  <td>
+  <input name="receipt" type="file" required accept="image/*,application/pdf" capture="camera"/>
+  </td>
+  </tr>
+
+  <tr>
+  <td>Kontonummer (inklusive clearingnummer)</td>
+  <td>
+  <input name="recipient_account" type="text" required pattern="{{ pattern_account }}"/>
+  </td>
+  </tr>
+
+  </table>
+
 
   <input type="submit" value="Skicka in">
 

@@ -1,4 +1,5 @@
 import logging
+import re
 import uuid
 from base64 import b64encode
 from json import JSONDecodeError
@@ -54,6 +55,7 @@ class OidcMiddleware:
         login_path: str = "/login",
         logout_path: str = "/logout",
         excluded_paths: list[str] | None = None,
+        excluded_re: str | None = None,
         redis_client: redis.Redis | None = None,
     ) -> None:
         self.app = app
@@ -67,6 +69,7 @@ class OidcMiddleware:
         self.login_path = login_path
         self.logout_path = logout_path
         self.excluded_paths = set(excluded_paths or [])
+        self.excluded_re = re.compile(excluded_re) if excluded_re else None
         self.redis_client = redis_client or redis.StrictRedis()
 
         self.redirect_uri = urljoin(self.base_uri, login_path)
@@ -92,7 +95,6 @@ class OidcMiddleware:
     def get_configuration(self) -> OidcConfiguration:
         endpoints = self.to_dict_or_raise(self.session.get(self.configuration_uri))
         res = OidcConfiguration.model_validate(endpoints)
-        print(res)
         return res
 
     async def __call__(
@@ -111,14 +113,22 @@ class OidcMiddleware:
                 response = await self.logout(request)
                 return await response(scope, receive, send)
 
-            request = Request(scope)
-            session = await self.get_session(request)
+            if path in self.excluded_paths:
+                self.logger.debug("Path %s excluded", path)
+                session = None
+            elif self.excluded_re and self.excluded_re.match(path):
+                self.logger.debug("Path %s excluded via RE", path)
+                session = None
+            else:
+                self.logger.debug("Path %s require authentication", path)
+                session = await self.get_session(request)
 
-            print("Session", session)
+                if session is None:
+                    self.logger.info("User not logged in, redirect to login endpoint")
+                    response = RedirectResponse(self.login_path)
+                    return await response(scope, receive, send)
 
-            if path not in self.excluded_paths and session is None:
-                response = RedirectResponse(self.login_path, status_code=301)
-                return await response(scope, receive, send)
+                self.logger.info("Found session %s", session.session_id)
 
             scope["state"]["session"] = session
 
@@ -135,12 +145,14 @@ class OidcMiddleware:
         claims: dict[str, str | int] = self.authenticate(code, callback_uri)
 
         session = Session(
-            name=claims.get("name"),
-            email=claims.get("email"),
+            name=str(claims["name"]),
+            email=str(claims["email"]),
             claims=claims,
         )
 
-        self.redis_client.set(session.session_id, session.json(), self.auth_ttl)
+        self.redis_client.set(
+            session.session_id, session.model_dump_json(), self.auth_ttl
+        )
 
         response = RedirectResponse(self.login_redirect_uri)
         response.set_cookie(key=self.cookie, value=session.session_id)
@@ -155,7 +167,11 @@ class OidcMiddleware:
     async def get_session(self, request: Request) -> Session | None:
         if session_id := request.cookies.get(self.cookie):  # noqa
             if session_data := self.redis_client.get(session_id):
-                return Session.model_validate_json(session_data)
+                session = Session.model_validate_json(session_data)
+                self.redis_client.set(
+                    session.session_id, session.model_dump_json(), self.auth_ttl
+                )
+                return session
 
     def authenticate(
         self, code: str, callback_uri: str, get_user_info: bool = False

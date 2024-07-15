@@ -18,8 +18,8 @@ class SmtpSettings(BaseModel):
     recipients: list[EmailStr]
     recipients_cc: list[EmailStr] = Field(default=[])
     subject: str = Field(default="")
-    username: str
-    password: str
+    username: str | None = Field(default=True)
+    password: str | None = Field(default=True)
     starttls: bool = Field(default=True)
 
     def get_connection_config(self) -> ConnectionConfig:
@@ -39,6 +39,7 @@ class OidcSettings(BaseModel):
     client_id: str
     client_secret: str
     base_uri: HttpUrl
+    auth_ttl: int = 3600
 
 
 class RedisSettings(BaseModel):
