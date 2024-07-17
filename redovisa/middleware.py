@@ -113,15 +113,14 @@ class OidcMiddleware:
                 response = await self.logout(request)
                 return await response(scope, receive, send)
 
+            session = await self.get_session(request)
+
             if path in self.excluded_paths:
                 self.logger.debug("Path %s excluded", path)
-                session = None
             elif self.excluded_re and self.excluded_re.match(path):
                 self.logger.debug("Path %s excluded via RE", path)
-                session = None
             else:
                 self.logger.debug("Path %s require authentication", path)
-                session = await self.get_session(request)
 
                 if session is None:
                     self.logger.info("User not logged in, redirect to login endpoint")

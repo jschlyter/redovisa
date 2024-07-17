@@ -63,20 +63,15 @@ class ExpenseReport(BaseModel):
 
 
 @router.get("/")
-async def index(request: Request) -> HTMLResponse:
-    session: Session = request.state.session
-    if session:
-        return HTMLResponse("Logged in as " + session.name)
-    else:
-        return HTMLResponse("User not logged in.")
-
-
-@router.get("/expense")
 async def expense_form(request: Request) -> HTMLResponse:
-    return request.app.templates.TemplateResponse(request=request, name="expense.j2")
+    session: Session = request.state.session
+    print(session)
+    return request.app.templates.TemplateResponse(
+        request=request, name="expense.j2", context={"session": session}
+    )
 
 
-@router.post("/submit")
+@router.post("/")
 async def submit_expense(request: Request, receipt: UploadFile) -> HTMLResponse:
 
     session: Session = request.state.session
