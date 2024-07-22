@@ -2,8 +2,8 @@ import logging
 import re
 import uuid
 
-from fastapi import APIRouter, Form, Request, UploadFile
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import APIRouter, Request, UploadFile
+from fastapi.responses import HTMLResponse
 from fastapi_mail import FastMail, MessageSchema, MessageType
 from pydantic import BaseModel, Field
 
@@ -66,13 +66,14 @@ async def expense_form(request: Request) -> HTMLResponse:
     session: Session = request.state.session
     print(session)
     return request.app.templates.TemplateResponse(
-        request=request, name="expense.j2", context={"session": session}
+        request=request,
+        name="expense.j2",
+        context={"session": session, **request.app.settings.context},
     )
 
 
 @router.post("/")
 async def submit_expense(request: Request, receipt: UploadFile) -> HTMLResponse:
-
     session: Session = request.state.session
 
     form = await request.form()
@@ -90,7 +91,8 @@ async def submit_expense(request: Request, receipt: UploadFile) -> HTMLResponse:
     message = MessageSchema(
         subject=settings.smtp.subject,
         recipients=settings.smtp.recipients,
-        cc=settings.smtp.recipients_cc,
+        cc=[session.email] + settings.smtp.recipients_cc,
+        bcc=settings.smtp.recipients_bcc,
         reply_to=[session.email],
         body=html_body,
         subtype=MessageType.html,
@@ -105,4 +107,6 @@ async def submit_expense(request: Request, receipt: UploadFile) -> HTMLResponse:
         fm = FastMail(conf)
         await fm.send_message(message)
 
-    return request.app.templates.TemplateResponse(request=request, name="submitted.j2")
+    return request.app.templates.TemplateResponse(
+        request=request, name="submitted.j2", context={**request.app.settings.context}
+    )

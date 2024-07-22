@@ -17,6 +17,7 @@ class SmtpSettings(BaseModel):
     sender: EmailStr
     recipients: list[EmailStr]
     recipients_cc: list[EmailStr] = Field(default=[])
+    recipients_bcc: list[EmailStr] = Field(default=[])
     subject: str = Field(default="")
     username: str | None = Field(default=True)
     password: str | None = Field(default=True)
@@ -51,6 +52,7 @@ class Settings(BaseSettings):
     smtp: SmtpSettings
     oidc: OidcSettings
     redis: RedisSettings
+    context: dict[str, str] = Field(default={})
 
     model_config = SettingsConfigDict(toml_file="redovisa.toml")
 
