@@ -1,0 +1,21 @@
+
+
+
+table {
+    border: 1px solid;
+    padding: 10px;
+    margin: 10px;
+}
+
+th {
+    text-align: left;
+}
+
+
+input.amount {
+    text-align: right;
+}
+
+th.amount, td.amount {
+    text-align: right;
+}

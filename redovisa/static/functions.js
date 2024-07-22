@@ -5,5 +5,5 @@ function updateTotal() {
     if (parseFloat(arr[i].value))
       tot += parseFloat(arr[i].value);
   }
-  document.getElementById('total').innerHTML = tot;
+  document.getElementById('total').innerHTML = tot.toFixed(2);
 }

@@ -17,7 +17,7 @@ router = APIRouter()
 
 class ExpenseItem(BaseModel):
     account: int
-    text: str
+    description: str | None
     amount: float
 
 
@@ -37,19 +37,18 @@ class ExpenseReport(BaseModel):
     def from_form(cls, form, session: Session):
         items = []
 
-        costs: dict[int, float] = {}
-        texts: dict[int, str] = {}
+        for name in form:
+            if match := re.match(r"^(\d+):account$", name):
+                row = match.group(1)
 
-        for name, value in form.items():
-            if match := re.match(r"^cost(\d{4})$", name):
-                costs[int(match.group(1))] = value or 0
-            elif match := re.match(r"^text(\d{4})$", name):
-                texts[int(match.group(1))] = value
-
-        for account, amount in costs.items():
-            items.append(
-                ExpenseItem(account=account, text=texts[account], amount=amount)
-            )
+                if account := form.get(name):
+                    items.append(
+                        ExpenseItem(
+                            account=int(account),
+                            description=form.get(f"{row}:description"),
+                            amount=float(form.get(f"{row}:amount")),
+                        )
+                    )
 
         return cls(
             items=items,
@@ -79,12 +78,10 @@ async def submit_expense(request: Request, receipt: UploadFile) -> HTMLResponse:
     form = await request.form()
     expense_report = ExpenseReport.from_form(form, session)
 
-    print(expense_report)
-
-    print(receipt.filename)
-    print(receipt.content_type)
     contents = await receipt.read()
-    print(len(contents))
+    logger.debug(
+        "File %s (%s) %d bytes", receipt.filename, receipt.content_type, len(contents)
+    )
 
     template = request.app.templates.get_template(name="mail.j2")
     html_body = template.render(expense_report=expense_report)
@@ -97,7 +94,7 @@ async def submit_expense(request: Request, receipt: UploadFile) -> HTMLResponse:
         reply_to=[session.email],
         body=html_body,
         subtype=MessageType.html,
-        attachments=[form["receipt"]],
+        attachments=[receipt],
     )
 
     if settings.smtp.test:

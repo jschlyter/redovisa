@@ -1,1 +1,30 @@
-<p>Totalbelopp {{ expense_report.total_amount }}</p>
+
+<h1>Utläggrapport från {{ expense_report.recipient.name }}</h1>
+
+<h2>Mottagare</h2>
+
+<p>Namn {{ expense_report.recipient.name }}</p>
+<p>Epost {{ expense_report.recipient.email }}</p>
+<p>Konto {{ expense_report.recipient.account }}</p>
+
+<h2>Poster</h2>
+
+<table>
+<tr>
+<th>Konto</th>
+<th>Beskrivning</th>
+<th>Belopp</th>
+</tr>
+
+{% for item in expense_report.items %}
+<tr>
+<td>{{ item.account }}</td>
+<td>{{ item.description }}</td>
+<td>{{ item.amount }}</td>
+</tr>
+
+{% endfor %}
+
+</table
+
+<p>Totalbelopp <b>{{ expense_report.total_amount }}</b></p>
