@@ -1,5 +1,11 @@
+body {
+    color: #003660;
+    font-family: Franklin Gothic Medium,Franklin Gothic,ITC Franklin Gothic,Arial,sans-serif;
+}
 
-
+p {
+    margin: 10px;
+}
 
 table {
     border: 1px solid;
@@ -18,4 +24,27 @@ input.amount {
 
 th.amount, td.amount {
     text-align: right;
+}
+
+td.reminder {
+    font-family: Franklin Gothic Light,Franklin Gothic,ITC Franklin Gothic,Arial,sans-serif;
+    font-size: 10pt;
+}
+
+input[type="submit"] {
+    margin: 10px;
+    background-color: lightgreen;
+}
+
+input[type="reset"] {
+    margin: 10px;
+    background-color: darkgray;
+}
+
+input[type="text"] {
+    width: 200px;
+}
+
+input[type="text"].amount {
+    width: 100px;
 }
