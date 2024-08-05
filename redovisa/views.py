@@ -1,10 +1,12 @@
+import contextlib
 import logging
 import re
+import smtplib
 import uuid
+from email.message import EmailMessage
 
 from fastapi import APIRouter, Request, UploadFile
 from fastapi.responses import HTMLResponse
-from fastapi_mail import FastMail, MessageSchema, MessageType
 from pydantic import BaseModel, Field
 
 from .middleware import Session
@@ -81,37 +83,48 @@ async def expense_form(request: Request) -> HTMLResponse:
 @router.post("/")
 async def submit_expense(request: Request, receipt: UploadFile) -> HTMLResponse:
     session: Session = request.state.session
+    settings = request.app.settings
 
     form = await request.form()
     expense_report = ExpenseReport.from_form(form, session)
 
-    contents = await receipt.read()
     logger.debug(
-        "File %s (%s) %d bytes", receipt.filename, receipt.content_type, len(contents)
+        "File %s (%s) %d bytes", receipt.filename, receipt.content_type, receipt.size
     )
 
     template = request.app.templates.get_template(name="mail.j2")
     html_body = template.render(expense_report=expense_report)
 
-    settings = request.app.settings
-    message = MessageSchema(
-        subject=settings.smtp.subject,
-        recipients=settings.smtp.recipients,
-        cc=[session.email] + settings.smtp.recipients_cc,
-        bcc=settings.smtp.recipients_bcc,
-        reply_to=[session.email],
-        body=html_body,
-        subtype=MessageType.html,
-        attachments=[receipt],
+    mime_maintype = "application"
+    mime_subtype = "octet-stream"
+    if content_type := receipt.headers.get("content-type"):
+        with contextlib.suppress(ValueError):
+            mime_maintype, mime_subtype = content_type.split("/")
+
+    msg = EmailMessage()
+    msg["Subject"] = settings.smtp.subject
+    msg["From"] = settings.smtp.sender
+    msg["Reply-To"] = session.email
+    msg["To"] = settings.smtp.recipients
+    msg["Cc"] = settings.smtp.recipients_cc
+    msg["Bcc"] = settings.smtp.recipients_bcc
+    msg.set_content(html_body, subtype="html")
+    msg.add_attachment(
+        await receipt.read(),
+        maintype=mime_maintype,
+        subtype=mime_subtype,
+        filename=receipt.filename,
     )
 
     if settings.smtp.test:
-        print(message)
-        print(message.body)
+        logger.debug("Sending email to %s", msg["To"])
     else:
-        conf = settings.smtp.get_connection_config()
-        fm = FastMail(conf)
-        await fm.send_message(message)
+        with smtplib.SMTP(settings.smtp.server, settings.smtp.port) as server:
+            if settings.smtp.starttls:
+                server.starttls()
+            if settings.smtp.username and settings.smtp.password:
+                server.login(settings.smtp.username, settings.smtp.password)
+            server.send_message(msg)
 
     request.app.set_recipient_account(session, form.get("recipient_account"))
 

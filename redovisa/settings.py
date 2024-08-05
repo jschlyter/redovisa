@@ -1,6 +1,5 @@
 from typing import Tuple, Type
 
-from fastapi_mail import ConnectionConfig
 from pydantic import BaseModel, EmailStr, Field, HttpUrl
 from pydantic_settings import (
     BaseSettings,
@@ -19,20 +18,9 @@ class SmtpSettings(BaseModel):
     recipients_cc: list[EmailStr] = Field(default=[])
     recipients_bcc: list[EmailStr] = Field(default=[])
     subject: str = Field(default="")
-    username: str | None = Field(default=True)
-    password: str | None = Field(default=True)
+    username: str | None = Field(default=None)
+    password: str | None = Field(default=None)
     starttls: bool = Field(default=True)
-
-    def get_connection_config(self) -> ConnectionConfig:
-        return ConnectionConfig(
-            MAIL_SERVER=self.server,
-            MAIL_FROM=self.sender,
-            MAIL_USERNAME=self.username,
-            MAIL_PASSWORD=self.password,
-            MAIL_PORT=self.port,
-            MAIL_STARTTLS=self.starttls,
-            MAIL_SSL_TLS=True,
-        )
 
 
 class OidcSettings(BaseModel):

@@ -1,4 +1,4 @@
-<h1>Utläggrapport från {{ expense_report.recipient.name }}</h1>
+<h1>Utlägg från {{ expense_report.recipient.name }}</h1>
 
 <h2>Mottagare</h2>
 
@@ -6,8 +6,10 @@
 <p>Epost {{ expense_report.recipient.email }}</p>
 <p>Konto {{ expense_report.recipient.account }}</p>
 
+
 <h2>Poster</h2>
 
+<p>
 <table>
 <tr>
 <th>Konto</th>
@@ -19,11 +21,12 @@
 <tr>
 <td>{{ item.account }}</td>
 <td>{{ item.description }}</td>
-<td>{{ item.amount }}</td>
+<td>{{ "%0.2f" | format(item.amount | float) }} kr</td>
 </tr>
 
 {% endfor %}
 
 </table
+</p>
 
-<p>Totalbelopp <b>{{ expense_report.total_amount }}</b></p>
+<p>Totalbelopp <b>{{ "%0.2f" | format(expense_report.total_amount | float) }} kr</b></p>
