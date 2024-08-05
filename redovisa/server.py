@@ -10,7 +10,7 @@ from fastapi.templating import Jinja2Templates
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from . import __version__
-from .middleware import OidcMiddleware
+from .middleware import OidcMiddleware, Session
 from .settings import Settings
 from .views import router as views_router
 
@@ -18,13 +18,12 @@ logger = logging.getLogger(__name__)
 
 
 class Redovisa(FastAPI):
-
     def __init__(self):
         super().__init__()
         self.settings = Settings()
         self.templates = Jinja2Templates(directory=join(dirname(__file__), "templates"))
 
-        redis_client = redis.StrictRedis(
+        self.redis_client = redis.StrictRedis(
             host=self.settings.redis.host, port=self.settings.redis.port
         )
 
@@ -37,7 +36,7 @@ class Redovisa(FastAPI):
             auth_ttl=self.settings.oidc.auth_ttl,
             excluded_paths=["/favicon.ico"],
             excluded_re=r"^/static/",
-            redis_client=redis_client,
+            redis_client=self.redis_client,
         )
         self.add_middleware(ProxyHeadersMiddleware)
 
@@ -47,6 +46,17 @@ class Redovisa(FastAPI):
             "/static",
             StaticFiles(directory=join(dirname(__file__), "static")),
             name="static",
+        )
+
+    def get_recepient_account(self, session: Session) -> str | None:
+        if recepient_account := self.redis_client.get(
+            f"recepient_account:{session.sub}"
+        ):
+            return recepient_account.decode()
+
+    def set_recepient_account(self, session: Session, recepient_account: str) -> None:
+        self.redis_client.set(
+            f"recepient_account:{session.sub}", recepient_account, 60 * 60 * 24 * 30
         )
 
 

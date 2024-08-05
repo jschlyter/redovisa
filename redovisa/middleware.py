@@ -23,6 +23,7 @@ from uvicorn._types import (
 
 class Session(BaseModel):
     session_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    sub: str
     email: str
     name: str
     claims: dict
@@ -145,6 +146,7 @@ class OidcMiddleware:
         claims: dict[str, str | int] = self.authenticate(code, callback_uri)
 
         session = Session(
+            sub=str(claims["sub"]),
             name=str(claims["name"]),
             email=str(claims["email"]),
             claims=claims,
