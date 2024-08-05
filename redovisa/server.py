@@ -10,7 +10,7 @@ from fastapi.templating import Jinja2Templates
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from . import __version__
-from .middleware import OidcMiddleware, Session
+from .middleware import OidcMiddleware
 from .settings import Settings
 from .views import router as views_router
 
@@ -46,19 +46,6 @@ class Redovisa(FastAPI):
             "/static",
             StaticFiles(directory=join(dirname(__file__), "static")),
             name="static",
-        )
-
-    def get_recipient_account(self, session: Session) -> str | None:
-        if recipient_account := self.redis_client.get(
-            f"recipient_account:{session.sub}"
-        ):
-            return recipient_account.decode()
-
-    def set_recipient_account(self, session: Session, recipient_account: str) -> None:
-        self.redis_client.set(
-            f"recipient_account:{session.sub}",
-            recipient_account,
-            self.settings.cache.recipient_account_ttl,
         )
 
 
