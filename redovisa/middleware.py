@@ -157,7 +157,9 @@ class OidcMiddleware:
         )
 
         response = RedirectResponse(self.login_redirect_uri)
-        response.set_cookie(key=self.cookie, value=session.session_id)
+        response.set_cookie(
+            key=self.cookie, value=session.session_id, max_age=self.auth_ttl
+        )
 
         return response
 
