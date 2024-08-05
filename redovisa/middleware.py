@@ -27,6 +27,10 @@ class Session(BaseModel):
     name: str
     claims: dict
 
+    @staticmethod
+    def get_redis_key(session_id: str) -> str:
+        return f"session:{session_id}"
+
 
 class OidcConfiguration(BaseModel):
     issuer: str
@@ -41,7 +45,6 @@ class OpenIDConnectException(Exception):
 
 
 class OidcMiddleware:
-
     def __init__(
         self,
         app: ASGI3Application,
@@ -100,7 +103,6 @@ class OidcMiddleware:
     async def __call__(
         self, scope: Scope, receive: ASGIReceiveCallable, send: ASGISendCallable
     ) -> None:
-
         if scope["type"] == "http":
             path = scope.get("path")
             request = Request(scope)
@@ -134,7 +136,6 @@ class OidcMiddleware:
         return await self.app(scope, receive, send)
 
     async def login(self, request: Request) -> RedirectResponse:
-
         callback_uri = self.redirect_uri
 
         code = request.query_params.get("code")
@@ -150,7 +151,9 @@ class OidcMiddleware:
         )
 
         self.redis_client.set(
-            session.session_id, session.model_dump_json(), self.auth_ttl
+            Session.get_redis_key(session.session_id),
+            session.model_dump_json(),
+            self.auth_ttl,
         )
 
         response = RedirectResponse(self.login_redirect_uri)
@@ -160,15 +163,17 @@ class OidcMiddleware:
 
     async def logout(self, request: Request) -> RedirectResponse:
         if session_id := request.cookies.get(self.cookie):
-            self.redis_client.delete(session_id)
+            self.redis_client.delete(Session.get_redis_key(session_id))
         return RedirectResponse(self.logout_redirect_uri)
 
     async def get_session(self, request: Request) -> Session | None:
         if session_id := request.cookies.get(self.cookie):  # noqa
-            if session_data := self.redis_client.get(session_id):
+            if session_data := self.redis_client.get(Session.get_redis_key(session_id)):
                 session = Session.model_validate_json(session_data)
                 self.redis_client.set(
-                    session.session_id, session.model_dump_json(), self.auth_ttl
+                    Session.get_redis_key(session.session_id),
+                    session.model_dump_json(),
+                    self.auth_ttl,
                 )
                 return session
 
