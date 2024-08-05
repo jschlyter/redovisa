@@ -65,8 +65,8 @@ class ExpenseReport(BaseModel):
 async def expense_form(request: Request) -> HTMLResponse:
     session: Session = request.state.session
     logger.debug("Session: %s", session)
-    recipient_account = request.app.get_recepient_account(session)
-    logger.debug("Receipient account: %s", recipient_account)
+    recipient_account = request.app.get_recipient_account(session) or ""
+    logger.debug("Recipient account: %s", recipient_account)
     return request.app.templates.TemplateResponse(
         request=request,
         name="expense.j2",
@@ -113,7 +113,7 @@ async def submit_expense(request: Request, receipt: UploadFile) -> HTMLResponse:
         fm = FastMail(conf)
         await fm.send_message(message)
 
-    request.app.set_recepient_account(session, form.get("recipient_account"))
+    request.app.set_recipient_account(session, form.get("recipient_account"))
 
     return request.app.templates.TemplateResponse(
         request=request, name="submitted.j2", context={**request.app.settings.context}

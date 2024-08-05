@@ -48,15 +48,17 @@ class Redovisa(FastAPI):
             name="static",
         )
 
-    def get_recepient_account(self, session: Session) -> str | None:
-        if recepient_account := self.redis_client.get(
-            f"recepient_account:{session.sub}"
+    def get_recipient_account(self, session: Session) -> str | None:
+        if recipient_account := self.redis_client.get(
+            f"recipient_account:{session.sub}"
         ):
-            return recepient_account.decode()
+            return recipient_account.decode()
 
-    def set_recepient_account(self, session: Session, recepient_account: str) -> None:
+    def set_recipient_account(self, session: Session, recipient_account: str) -> None:
         self.redis_client.set(
-            f"recepient_account:{session.sub}", recepient_account, 60 * 60 * 24 * 30
+            f"recipient_account:{session.sub}",
+            recipient_account,
+            self.settings.cache.recipient_account_ttl,
         )
 
 

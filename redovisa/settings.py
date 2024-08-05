@@ -43,6 +43,10 @@ class OidcSettings(BaseModel):
     auth_ttl: int = 3600
 
 
+class CacheSettings(BaseModel):
+    recipient_account_ttl: int = 3600 * 24 * 30
+
+
 class RedisSettings(BaseModel):
     host: str
     port: int = 6379
@@ -52,6 +56,7 @@ class Settings(BaseSettings):
     smtp: SmtpSettings
     oidc: OidcSettings
     redis: RedisSettings
+    cache: CacheSettings = CacheSettings()
     context: dict[str, str] = Field(default={})
 
     model_config = SettingsConfigDict(toml_file="redovisa.toml")
