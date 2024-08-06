@@ -1,4 +1,8 @@
 services:
+  redovisa:
+    image: redovisa:latest
+    build:
+      context: .
   redis:
     image: redis/redis-stack:latest
     ports:
