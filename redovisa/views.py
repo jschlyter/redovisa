@@ -1,6 +1,7 @@
 import contextlib
 import logging
 import smtplib
+from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
 
 from fastapi import APIRouter, Request, UploadFile
@@ -8,8 +9,6 @@ from fastapi.responses import HTMLResponse
 
 from .middleware import Session
 from .models import ExpenseReport
-
-RECIPIENT_ACCOUNT_COOKIE = "recipient_account"
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +30,9 @@ async def index(request: Request) -> HTMLResponse:
 async def expense_form(request: Request) -> HTMLResponse:
     session: Session = request.state.session
     logger.debug("Session: %s", session)
-    recipient_account = request.cookies.get(RECIPIENT_ACCOUNT_COOKIE, "")
+    recipient_account = request.cookies.get(
+        request.app.settings.cookies.recipient_account, ""
+    )
     logger.debug("Recipient account: %s", recipient_account)
     return request.app.templates.TemplateResponse(
         request=request,
@@ -107,7 +108,10 @@ async def submit_expense(request: Request, receipts: list[UploadFile]) -> HTMLRe
     )
 
     response.set_cookie(
-        key=RECIPIENT_ACCOUNT_COOKIE, value=form.get("recipient_account")
+        key=request.app.settings.cookies.recipient_account,
+        value=form.get("recipient_account"),
+        expires=datetime.now(tz=timezone.utc)
+        + timedelta(days=request.app.settings.cookies.recipient_account_days),
     )
 
     return response

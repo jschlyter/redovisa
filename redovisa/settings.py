@@ -37,6 +37,12 @@ class RedisSettings(BaseModel):
     port: int = 6379
 
 
+class CookieSettings(BaseModel):
+    session: str = Field(default="session")
+    recipient_account: str = Field(default="recipient_account")
+    recipient_account_days: int = 180
+
+
 class PathSettings(BaseModel):
     templates: DirectoryPath = Field(default=join(dirname(__file__), "templates"))
     static: DirectoryPath = Field(default=join(dirname(__file__), "static"))
@@ -48,6 +54,7 @@ class Settings(BaseSettings):
     redis: RedisSettings
     paths: PathSettings = PathSettings()
     context: dict[str, str | dict[str, str]] = Field(default={})
+    cookies: CookieSettings = CookieSettings()
 
     model_config = SettingsConfigDict(toml_file="redovisa.toml")
 
