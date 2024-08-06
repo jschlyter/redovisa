@@ -15,7 +15,7 @@
 <body>
 <h1>Redovisa utlägg för {{ organisation }}</h1>
 
-<p>Redovisning av utlägg av <b>{{ session.name }} &ndash; {{ session.email }}</b></p>
+<p>Redovisning av utlägg gjorda av <b>{{ session.name }} &ndash; {{ session.email }}</b></p>
 
 <form method="post" enctype="multipart/form-data">
 
@@ -47,34 +47,32 @@
   {% endfor %}
 
   <tr>
-    <td><b>Totalsumma</b></td>
+    <th><b>Totalsumma</b></th>
     <td></td>
     <td class="amount"><div id="total">0.00</div></td>
     <td>kr</td>
   </tr>
 
   <tr>
-  <td colspan=4><hr/></td>
+    <td colspan=4><hr/></td>
   </tr>
 
   <tr>
-  <td>Bifogat kvitto (PDF eller PNG)</td>
-  <td colspan=3>
-  <input name="receipt" type="file" required accept="image/*,application/pdf" capture="camera"/>
-  </td>
+    <th>Bifogat kvitto (PDF eller PNG)</th>
+    <td colspan=3>
+      <input name="receipt" type="file" required accept="image/*,application/pdf" capture="camera"/>
+    </td>
   </tr>
 
   <tr>
-  <td>Kontonummer</td>
-  <td colspan=3>
-  <input name="recipient_account" type="text" value="{{ recipient_account }}" required pattern="{{ pattern_account }}"/>
-  </td>
+    <th>Kontonummer</th>
+    <td colspan=3>
+      <input name="recipient_account" type="text" value="{{ recipient_account }}" required pattern="{{ pattern_account }}"/>
+    </td>
   </tr>
 
   <tr>
-  <td class="reminder" colspan=4>
-  Endast siffror. Glöm inte clearingnummer!
-  </td>
+    <td class="reminder" colspan=4>Endast siffror. Glöm inte clearingnummer!</td>
   </tr>
 
   </table>

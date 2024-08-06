@@ -1,0 +1,23 @@
+<html>
+
+<head>
+<title>Redovisa</title>
+<link rel="stylesheet" href="/static/redovisa.css">
+<link rel="stylesheet" href="/static/buttons.css">
+<meta charset="utf-8"/>
+<script type="text/javascript" src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script type="text/javascript" src="/static/functions.js"></script>
+</head>
+
+<body>
+<h1>Redovisa utlägg för {{ organisation }}</h1>
+
+<p>Via den här webbplatsen redovisar du utlägg för {{ organisation }}. Inloggning sker via <a href="https://scoutid.se/">ScoutID</a>.</p>
+
+<form action="/expense">
+  <input type="submit" class="button-4" value="Redovisa utlägg" />
+</form>
+
+</body>
+
+</html>

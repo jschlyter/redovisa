@@ -17,6 +17,17 @@ router = APIRouter()
 
 
 @router.get("/")
+async def index(request: Request) -> HTMLResponse:
+    return request.app.templates.TemplateResponse(
+        request=request,
+        name="home.j2",
+        context={
+            **request.app.settings.context,
+        },
+    )
+
+
+@router.get("/expense")
 async def expense_form(request: Request) -> HTMLResponse:
     session: Session = request.state.session
     logger.debug("Session: %s", session)
@@ -33,7 +44,7 @@ async def expense_form(request: Request) -> HTMLResponse:
     )
 
 
-@router.post("/")
+@router.post("/expense")
 async def submit_expense(request: Request, receipt: UploadFile) -> HTMLResponse:
     session: Session = request.state.session
     settings = request.app.settings

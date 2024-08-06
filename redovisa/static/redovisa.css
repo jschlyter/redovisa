@@ -1,6 +1,7 @@
 body {
+    font-family: Franklin Gothic Light,Franklin Gothic,ITC Franklin Gothic,Arial,sans-serif;
     color: #003660;
-    font-family: Franklin Gothic Medium,Franklin Gothic,ITC Franklin Gothic,Arial,sans-serif;
+    margin: 10px;
 }
 
 p {
@@ -14,9 +15,9 @@ table {
 }
 
 th {
+    font-family: Franklin Gothic Medium,Franklin Gothic,ITC Franklin Gothic,Arial,sans-serif;
     text-align: left;
 }
-
 
 input.amount {
     text-align: right;
@@ -27,7 +28,6 @@ th.amount, td.amount {
 }
 
 td.reminder {
-    font-family: Franklin Gothic Light,Franklin Gothic,ITC Franklin Gothic,Arial,sans-serif;
     font-size: 10pt;
 }
 
