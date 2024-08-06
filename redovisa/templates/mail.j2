@@ -4,34 +4,45 @@
 
 <h2>Mottagare</h2>
 
-<p>Namn {{ expense_report.recipient.name }}</p>
-<p>Epost {{ expense_report.recipient.email }}</p>
-<p>Konto {{ expense_report.recipient.account }}</p>
-<p>Belopp {{ "%0.2f" | format(expense_report.total_amount | float) }} kr</p>
+<p><table>
+  <tr>
+    <th>Namn</th>
+    <td>{{ expense_report.recipient.name }}</td>
+  </tr>
+  <tr>
+    <th>Epost</th>
+    <td>{{ expense_report.recipient.email }}</td>
+  </tr>
+  <tr>
+    <th>Konto</th>
+    <td>{{ expense_report.recipient.account }}</td>
+  </tr>
+  <tr>
+    <th>Belopp</th>
+    <td>{{ "%0.2f" | format(expense_report.total_amount | float) }} kr</td>
+  </tr>
+</table</p>
 
 
 <h2>Poster</h2>
 
-<p>
-<table>
-<tr>
-<th>Konto</th>
-<th>Namn</th>
-<th>Beskrivning</th>
-<th>Belopp</th>
-</tr>
+<p><table>
+  <tr>
+    <th>Konto</th>
+    <th>Namn</th>
+    <th>Beskrivning</th>
+    <th>Belopp</th>
+  </tr>
 
 {% for item in expense_report.items %}
-<tr>
-<td>{{ item.account }})</td>
-<td>{{ item.account_name }})</td>
-<td>{{ item.description }}</td>
-<td>{{ "%0.2f" | format(item.amount | float) }} kr</td>
-</tr>
-
+  <tr>
+    <td>{{ item.account }})</td>
+    <td>{{ item.account_name }})</td>
+    <td>{{ item.description }}</td>
+    <td>{{ "%0.2f" | format(item.amount | float) }} kr</td>
+  </tr>
 {% endfor %}
 
-</table
-</p>
+</table</p>
 
 <p>Totalbelopp {{ "%0.2f" | format(expense_report.total_amount | float) }} kr</p>

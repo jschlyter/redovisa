@@ -57,7 +57,7 @@ async def submit_expense(request: Request, receipts: list[UploadFile]) -> HTMLRe
 
     template = request.app.templates.get_template(name="mail.j2")
     html_body = template.render(
-        expense_report=expense_report, **request.app.settings.context
+        expense_report=expense_report, receipts=receipts, **request.app.settings.context
     )
 
     msg = EmailMessage()
@@ -79,6 +79,7 @@ async def submit_expense(request: Request, receipts: list[UploadFile]) -> HTMLRe
 
         mime_maintype = "application"
         mime_subtype = "octet-stream"
+
         if content_type := receipt.headers.get("content-type"):
             with contextlib.suppress(ValueError):
                 mime_maintype, mime_subtype = content_type.split("/")
