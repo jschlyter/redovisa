@@ -7,7 +7,7 @@
 <p>Namn {{ expense_report.recipient.name }}</p>
 <p>Epost {{ expense_report.recipient.email }}</p>
 <p>Konto {{ expense_report.recipient.account }}</p>
-<p>Belopp <b>{{ "%0.2f" | format(expense_report.total_amount | float) }} kr</b></p>
+<p>Belopp {{ "%0.2f" | format(expense_report.total_amount | float) }} kr</p>
 
 
 <h2>Poster</h2>
@@ -34,4 +34,4 @@
 </table
 </p>
 
-<p>Totalbelopp <b>{{ "%0.2f" | format(expense_report.total_amount | float) }} kr</b></p>
+<p>Totalbelopp {{ "%0.2f" | format(expense_report.total_amount | float) }} kr</p>
