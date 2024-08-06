@@ -1,7 +1,9 @@
 import logging
 import re
+import time
 import uuid
 from base64 import b64encode
+from datetime import datetime, timezone
 from json import JSONDecodeError
 from urllib.parse import quote, urljoin
 
@@ -154,15 +156,20 @@ class OidcMiddleware:
             claims=claims,
         )
 
+        default_expires = int(time.time() + self.auth_ttl)
+        expires = min(int(claims.get("exp", default_expires)), default_expires)
+
         self.redis_client.set(
             Session.get_redis_key(session.session_id),
             session.model_dump_json(),
-            self.auth_ttl,
+            exat=expires,
         )
 
         response = RedirectResponse(self.login_redirect_uri)
         response.set_cookie(
-            key=self.cookie, value=session.session_id, max_age=self.auth_ttl
+            key=self.cookie,
+            value=session.session_id,
+            expires=datetime.fromtimestamp(expires, tz=timezone.utc),
         )
 
         return response

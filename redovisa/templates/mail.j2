@@ -7,6 +7,7 @@
 <p>Namn {{ expense_report.recipient.name }}</p>
 <p>Epost {{ expense_report.recipient.email }}</p>
 <p>Konto {{ expense_report.recipient.account }}</p>
+<p>Belopp <b>{{ "%0.2f" | format(expense_report.total_amount | float) }} kr</b></p>
 
 
 <h2>Poster</h2>
@@ -15,13 +16,15 @@
 <table>
 <tr>
 <th>Konto</th>
+<th>Namn</th>
 <th>Beskrivning</th>
 <th>Belopp</th>
 </tr>
 
 {% for item in expense_report.items %}
 <tr>
-<td>{{ item.account }}</td>
+<td>{{ item.account }})</td>
+<td>{{ item.account_name }})</td>
 <td>{{ item.description }}</td>
 <td>{{ "%0.2f" | format(item.amount | float) }} kr</td>
 </tr>

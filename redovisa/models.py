@@ -8,6 +8,7 @@ from .middleware import Session
 
 class ExpenseItem(BaseModel):
     account: int
+    account_name: str | None
     description: str | None
     amount: float
 
@@ -25,7 +26,12 @@ class ExpenseReport(BaseModel):
     recipient: Recipient
 
     @classmethod
-    def from_form(cls, form, session: Session):
+    def from_form(
+        cls,
+        form,
+        session: Session,
+        accounts: dict[str, str],
+    ):
         items = []
 
         for name in form:
@@ -36,6 +42,7 @@ class ExpenseReport(BaseModel):
                     items.append(
                         ExpenseItem(
                             account=int(account),
+                            account_name=accounts.get(account),
                             description=form.get(f"{row}:description"),
                             amount=float(form.get(f"{row}:amount")),
                         )

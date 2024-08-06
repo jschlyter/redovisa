@@ -29,7 +29,7 @@ class OidcSettings(BaseModel):
     client_id: str
     client_secret: str
     base_uri: HttpUrl
-    auth_ttl: int = 3600
+    auth_ttl: int = 86400
 
 
 class RedisSettings(BaseModel):

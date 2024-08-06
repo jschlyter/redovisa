@@ -45,25 +45,19 @@ async def expense_form(request: Request) -> HTMLResponse:
 
 
 @router.post("/expense")
-async def submit_expense(request: Request, receipt: UploadFile) -> HTMLResponse:
+async def submit_expense(request: Request, receipts: list[UploadFile]) -> HTMLResponse:
     session: Session = request.state.session
     settings = request.app.settings
 
     form = await request.form()
-    expense_report = ExpenseReport.from_form(form, session)
-
-    logger.debug(
-        "File %s (%s) %d bytes", receipt.filename, receipt.content_type, receipt.size
+    expense_report = ExpenseReport.from_form(
+        form, session, request.app.settings.context.get("accounts", {})
     )
 
     template = request.app.templates.get_template(name="mail.j2")
-    html_body = template.render(expense_report=expense_report)
-
-    mime_maintype = "application"
-    mime_subtype = "octet-stream"
-    if content_type := receipt.headers.get("content-type"):
-        with contextlib.suppress(ValueError):
-            mime_maintype, mime_subtype = content_type.split("/")
+    html_body = template.render(
+        expense_report=expense_report, **request.app.settings.context
+    )
 
     msg = EmailMessage()
     msg["Subject"] = settings.smtp.subject
@@ -73,15 +67,31 @@ async def submit_expense(request: Request, receipt: UploadFile) -> HTMLResponse:
     msg["Cc"] = settings.smtp.recipients_cc
     msg["Bcc"] = settings.smtp.recipients_bcc
     msg.set_content(html_body, subtype="html")
-    msg.add_attachment(
-        await receipt.read(),
-        maintype=mime_maintype,
-        subtype=mime_subtype,
-        filename=receipt.filename,
-    )
+
+    for receipt in receipts:
+        logger.debug(
+            "Processing file %s (%s) %d bytes",
+            receipt.filename,
+            receipt.content_type,
+            receipt.size,
+        )
+
+        mime_maintype = "application"
+        mime_subtype = "octet-stream"
+        if content_type := receipt.headers.get("content-type"):
+            with contextlib.suppress(ValueError):
+                mime_maintype, mime_subtype = content_type.split("/")
+
+        msg.add_attachment(
+            await receipt.read(),
+            maintype=mime_maintype,
+            subtype=mime_subtype,
+            filename=receipt.filename,
+        )
 
     if settings.smtp.test:
         logger.debug("Sending email to %s", msg["To"])
+        print(html_body)
     else:
         with smtplib.SMTP(settings.smtp.server, settings.smtp.port) as server:
             if settings.smtp.starttls:
