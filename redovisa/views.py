@@ -91,7 +91,9 @@ async def submit_expense(request: Request, receipt: UploadFile) -> HTMLResponse:
             server.send_message(msg)
 
     response = request.app.templates.TemplateResponse(
-        request=request, name="submitted.j2", context={**request.app.settings.context}
+        request=request,
+        name="submitted.j2",
+        context={"expense_report": expense_report, **request.app.settings.context},
     )
 
     response.set_cookie(
