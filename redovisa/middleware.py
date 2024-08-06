@@ -58,6 +58,8 @@ class OidcMiddleware:
         auth_ttl: int = 300,
         login_path: str = "/login",
         logout_path: str = "/logout",
+        login_redirect_uri: str | None = None,
+        logout_redirect_uri: str | None = None,
         excluded_paths: list[str] | None = None,
         excluded_re: str | None = None,
         redis_client: redis.Redis | None = None,
@@ -78,8 +80,8 @@ class OidcMiddleware:
 
         self.redirect_uri = urljoin(self.base_uri, login_path)
 
-        self.login_redirect_uri = self.base_uri
-        self.logout_redirect_uri = self.base_uri
+        self.login_redirect_uri = login_redirect_uri or self.base_uri
+        self.logout_redirect_uri = logout_redirect_uri or self.base_uri
 
         self.logger = logging.getLogger(__class__.__name__)
         self.session = httpx.Client()
