@@ -1,6 +1,5 @@
 import argparse
 import logging
-from os.path import dirname, join
 
 import redis
 import uvicorn
@@ -20,9 +19,10 @@ logger = logging.getLogger(__name__)
 class Redovisa(FastAPI):
     def __init__(self):
         super().__init__()
-        self.settings = Settings()
-        self.templates = Jinja2Templates(directory=join(dirname(__file__), "templates"))
 
+        self.settings = Settings()
+
+        self.templates = Jinja2Templates(directory=self.settings.paths.templates)
         self.redis_client = redis.StrictRedis(
             host=self.settings.redis.host, port=self.settings.redis.port
         )
@@ -44,7 +44,7 @@ class Redovisa(FastAPI):
 
         self.mount(
             "/static",
-            StaticFiles(directory=join(dirname(__file__), "static")),
+            StaticFiles(directory=self.settings.paths.static),
             name="static",
         )
 

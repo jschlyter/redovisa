@@ -1,6 +1,7 @@
+from os.path import dirname, join
 from typing import Tuple, Type
 
-from pydantic import BaseModel, EmailStr, Field, HttpUrl
+from pydantic import BaseModel, DirectoryPath, EmailStr, Field, HttpUrl
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
@@ -36,10 +37,16 @@ class RedisSettings(BaseModel):
     port: int = 6379
 
 
+class PathSettings(BaseModel):
+    templates: DirectoryPath = Field(default=join(dirname(__file__), "templates"))
+    static: DirectoryPath = Field(default=join(dirname(__file__), "static"))
+
+
 class Settings(BaseSettings):
     smtp: SmtpSettings
     oidc: OidcSettings
     redis: RedisSettings
+    paths: PathSettings
     context: dict[str, str] = Field(default={})
 
     model_config = SettingsConfigDict(toml_file="redovisa.toml")
