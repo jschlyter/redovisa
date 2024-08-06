@@ -46,7 +46,7 @@ class Settings(BaseSettings):
     smtp: SmtpSettings
     oidc: OidcSettings
     redis: RedisSettings
-    paths: PathSettings
+    paths: PathSettings = PathSettings()
     context: dict[str, str | dict[str, str]] = Field(default={})
 
     model_config = SettingsConfigDict(toml_file="redovisa.toml")
