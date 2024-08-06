@@ -13,9 +13,9 @@
 {% set pattern_account = "^\\d+$" %}
 
 <body>
-<h1>Redovisa utlägg</h1>
+<h1>Redovisa utlägg för {{ organisation }}</h1>
 
-<p>Redovisning av utlägg för <b>{{ session.name }} &ndash; {{ session.email }}</b></p>
+<p>Redovisning av utlägg av <b>{{ session.name }} &ndash; {{ session.email }}</b></p>
 
 <form method="post" enctype="multipart/form-data">
 
@@ -34,14 +34,9 @@
     <td>
       <select name="{{row}}:account" id="acount">
         <option value="">Välj konto…</option>
-        <option value="4210">Grenkostnad Bäver (4210)</option>
-        <option value="4211">Grenkostnad Spårare (4211)</option>
-        <option value="4212">Grenkostnad Upptäckare (4212)</option>
-        <option value="4213">Grenkostnad Äventyrare (4213)</option>
-        <option value="4214">Grenkostnad Utmanare (4214)</option>
-        <option value="4610">Kostnader kårläger (4610)</option>
-        <option value="4611">Kostnader sommarläger (4611)</option>
-        <option value="0000">Övrigt</option>
+        {% for account, description in accounts.items() %}
+        <option value="{{ account }}">{{ description }}</option>
+        {% endfor %}
       </select>
     </td>
     <td><input name="{{row}}:description" type="text" class="description" maxlength="132"/></td>
