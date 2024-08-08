@@ -1,18 +1,21 @@
+import json
 import logging
 import re
 import time
+import urllib.parse
 import uuid
 from base64 import b64encode
 from datetime import datetime, timezone
 from json import JSONDecodeError
-from urllib.parse import quote, urljoin
+from urllib.parse import urljoin
 
 import httpx
 import redis
 from cryptojwt.jwt import JWT
 from cryptojwt.key_bundle import KeyBundle
 from cryptojwt.key_jar import KeyJar
-from fastapi import Request
+from cryptojwt.utils import b64d, b64e
+from fastapi import HTTPException, Request
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field
 from uvicorn._types import (
@@ -56,10 +59,12 @@ class OidcMiddleware:
         client_secret: str,
         base_uri: str,
         scope: str = "openid email profile",
-        cookie: str = "session",
+        cookie: str = "session_id",
+        session_ttl: int = 3600,
         auth_ttl: int = 300,
         login_path: str = "/login",
         logout_path: str = "/logout",
+        callback_path: str = "/callback",
         login_redirect_uri: str | None = None,
         logout_redirect_uri: str | None = None,
         excluded_paths: list[str] | None = None,
@@ -73,15 +78,16 @@ class OidcMiddleware:
         self.base_uri = base_uri
         self.scope = scope
         self.cookie = cookie
+        self.session_ttl = session_ttl
         self.auth_ttl = auth_ttl
         self.login_path = login_path
         self.logout_path = logout_path
+        self.callback_path = callback_path
         self.excluded_paths = set(excluded_paths or [])
         self.excluded_re = re.compile(excluded_re) if excluded_re else None
         self.redis_client = redis_client or redis.StrictRedis()
 
-        self.redirect_uri = urljoin(self.base_uri, login_path)
-
+        self.callback_uri = urljoin(self.base_uri, callback_path)
         self.login_redirect_uri = login_redirect_uri or self.base_uri
         self.logout_redirect_uri = logout_redirect_uri or self.base_uri
 
@@ -112,7 +118,11 @@ class OidcMiddleware:
             path = scope.get("path")
             request = Request(scope)
 
-            if path == self.login_path:
+            if path == self.callback_path:
+                response = await self.callback(request)
+                return await response(scope, receive, send)
+
+            elif path == self.login_path:
                 response = await self.login(request)
                 return await response(scope, receive, send)
 
@@ -131,7 +141,7 @@ class OidcMiddleware:
 
                 if session is None:
                     self.logger.info("User not logged in, redirect to login endpoint")
-                    response = RedirectResponse(self.login_path)
+                    response = await self.login(request, next=path)
                     return await response(scope, receive, send)
 
                 self.logger.info("Found session %s", session.session_id)
@@ -140,14 +150,21 @@ class OidcMiddleware:
 
         return await self.app(scope, receive, send)
 
-    async def login(self, request: Request) -> RedirectResponse:
-        callback_uri = self.redirect_uri
+    async def callback(self, request: Request) -> RedirectResponse:
+        """Handle OIDC callbacks"""
 
-        code = request.query_params.get("code")
-        if not code:
-            return RedirectResponse(self.get_auth_redirect_uri(callback_uri))
+        if not (code := request.query_params.get("code")):
+            raise HTTPException(status_code=400, detail="Authorization code missing")
 
-        claims: dict[str, str | int] = self.authenticate(code, callback_uri)
+        if not (state := request.query_params.get("state")):
+            raise HTTPException(status_code=400, detail="Authorization state missing")
+
+        decoded_state = json.loads(b64d(state.encode()))
+        if request.cookies[self.cookie] != decoded_state["authentication_id"]:
+            raise HTTPException(status_code=400, detail="Authorization state mismatch")
+        login_redirect_uri = decoded_state["next"] or self.login_redirect_uri
+
+        claims: dict[str, str | int] = self.authenticate(code, self.callback_uri)
 
         session = Session(
             sub=str(claims["sub"]),
@@ -156,39 +173,56 @@ class OidcMiddleware:
             claims=claims,
         )
 
-        default_expires = int(time.time() + self.auth_ttl)
-        expires = min(int(claims.get("exp", default_expires)), default_expires)
+        expires_at = int(claims.get("exp", time.time() + self.session_ttl))
 
         self.redis_client.set(
             Session.get_redis_key(session.session_id),
             session.model_dump_json(),
-            exat=expires,
+            exat=expires_at,
         )
 
-        response = RedirectResponse(self.login_redirect_uri)
+        response = RedirectResponse(login_redirect_uri)
         response.set_cookie(
             key=self.cookie,
             value=session.session_id,
-            expires=datetime.fromtimestamp(expires, tz=timezone.utc),
+            expires=datetime.fromtimestamp(expires_at, tz=timezone.utc),
+        )
+
+        return response
+
+    async def login(
+        self, request: Request, next: str | None = None
+    ) -> RedirectResponse:
+        """Redirect to OIDC authentication"""
+
+        # create state
+        authentication_id = f"pre-auth/{str(uuid.uuid4())}"
+        state_payload = {"next": next, "authentication_id": authentication_id}
+        state = b64e(json.dumps(state_payload).encode()).decode()
+
+        response = RedirectResponse(
+            self.get_auth_redirect_uri(self.callback_uri, state=state)
+        )
+
+        response.set_cookie(
+            key=self.cookie, value=authentication_id, max_age=self.auth_ttl
         )
 
         return response
 
     async def logout(self, request: Request) -> RedirectResponse:
+        """Logout (remove session)"""
+
+        response = RedirectResponse(self.logout_redirect_uri)
         if session_id := request.cookies.get(self.cookie):
             self.redis_client.delete(Session.get_redis_key(session_id))
-        return RedirectResponse(self.logout_redirect_uri)
+            response.set_cookie(self.cookie, "", expires=0)
+        return response
 
     async def get_session(self, request: Request) -> Session | None:
         if session_id := request.cookies.get(self.cookie):  # noqa
             if session_data := self.redis_client.get(Session.get_redis_key(session_id)):
-                session = Session.model_validate_json(session_data)
-                self.redis_client.set(
-                    Session.get_redis_key(session.session_id),
-                    session.model_dump_json(),
-                    self.auth_ttl,
-                )
-                return session
+                return Session.model_validate_json(session_data)
 
     def authenticate(
         self, code: str, callback_uri: str, get_user_info: bool = False
@@ -202,13 +236,18 @@ class OidcMiddleware:
             jwt = self.jwt.unpack(id_token)
             return dict(jwt)
 
-    def get_auth_redirect_uri(self, callback_uri: str):
-        return "{}?response_type=code&scope={}&client_id={}&redirect_uri={}".format(  # noqa
-            self.configuration.authorization_endpoint,
-            self.scope,
-            self.client_id,
-            quote(callback_uri),
+    def get_auth_redirect_uri(self, callback_uri: str, **kwargs) -> str:
+        params = urllib.parse.urlencode(
+            {
+                "response_type": "code",
+                "scope": self.scope,
+                "client_id": self.client_id,
+                "redirect_uri": callback_uri,
+                **kwargs,
+            }
         )
+
+        return f"{self.configuration.authorization_endpoint}?{params}"
 
     def get_auth_token(self, code: str, callback_uri: str) -> dict:
         authstr = (

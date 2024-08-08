@@ -33,11 +33,12 @@ class Redovisa(FastAPI):
             client_id=self.settings.oidc.client_id,
             client_secret=self.settings.oidc.client_secret,
             base_uri=str(self.settings.oidc.base_uri),
+            session_ttl=self.settings.oidc.session_ttl,
             auth_ttl=self.settings.oidc.auth_ttl,
             cookie=self.settings.cookies.session,
             excluded_paths=["/", "/favicon.ico"],
             excluded_re=r"^/static/",
-            login_redirect_uri="/expense",
+            login_redirect_uri="/",
             redis_client=self.redis_client,
         )
         self.add_middleware(ProxyHeadersMiddleware)

@@ -29,7 +29,8 @@ class OidcSettings(BaseModel):
     client_id: str
     client_secret: str
     base_uri: HttpUrl
-    auth_ttl: int = 86400
+    auth_ttl: int = 300
+    session_ttl: int = 86400
 
 
 class RedisSettings(BaseModel):
@@ -38,7 +39,7 @@ class RedisSettings(BaseModel):
 
 
 class CookieSettings(BaseModel):
-    session: str = Field(default="session")
+    session: str = Field(default="session_id")
     recipient_account: str = Field(default="recipient_account")
     recipient_account_days: int = 180
 
