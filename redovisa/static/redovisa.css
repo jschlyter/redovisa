@@ -53,6 +53,6 @@ input[type="text"].amount {
     width: 100px;
 }
 
-input:invalid {
-    border: 1px dashed red;
+input:invalid#recipient_account {
+    color: red;
 }
