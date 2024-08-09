@@ -35,7 +35,11 @@
       <select name="{{row}}:account" id="acount">
         <option value="">Välj konto…</option>
         {% for account, description in accounts.items() %}
+        {% if account | int %}
+        <option value="{{ account }}">{{ description }} ({{ account }})</option>
+        {% else %}
         <option value="{{ account }}">{{ description }}</option>
+        {% endif %}
         {% endfor %}
       </select>
     </td>
