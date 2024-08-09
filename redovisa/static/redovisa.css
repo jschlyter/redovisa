@@ -52,3 +52,7 @@ input[type="text"] {
 input[type="text"].amount {
     width: 100px;
 }
+
+input:invalid {
+    border: 1px dashed red;
+}
