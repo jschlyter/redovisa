@@ -54,6 +54,6 @@ class ExpenseReport(BaseModel):
             recipient=Recipient(
                 name=session.name,
                 email=session.email,
-                account=form["recipient_account"],
+                account=int(re.sub(r"[^\d]", "", form["recipient_account"])),
             ),
         )

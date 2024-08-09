@@ -10,7 +10,7 @@
 </head>
 
 {% set pattern_amount = "^\\d+(.\\d{2})?$" %}
-{% set pattern_account = "^\\d+$" %}
+{% set pattern_account = "^\\d{4}[\\d\\-,\\s]+$" %}
 
 <body>
 <h1>Redovisa utlägg för {{ organisation }}</h1>
