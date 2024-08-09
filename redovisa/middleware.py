@@ -41,9 +41,19 @@ class Session(BaseModel):
 class OidcConfiguration(BaseModel):
     issuer: str
     authorization_endpoint: str
+    device_authorization_endpoint: str | None = None
     token_endpoint: str
     userinfo_endpoint: str
+    revocation_endpoint: str | None = None
     jwks_uri: str
+    response_types_supported: list[str] = []
+    subject_types_supported: list[str] = []
+    id_token_signing_alg_values_supported: list[str] = []
+    scopes_supported: list[str] = []
+    token_endpoint_auth_methods_supported: list[str] = []
+    claims_supported: list[str] = []
+    code_challenge_methods_supported: list[str] = []
+    grant_types_supported: list[str] = []
 
 
 class OpenIDConnectException(Exception):
@@ -140,7 +150,7 @@ class OidcMiddleware:
                 self.logger.debug("Path %s require authentication", path)
 
                 if session is None:
-                    self.logger.info("User not logged in, redirect to login endpoint")
+                    self.logger.info("No session found, redirect to login endpoint")
                     response = await self.login(request, next=path)
                     return await response(scope, receive, send)
 
@@ -160,13 +170,15 @@ class OidcMiddleware:
             raise HTTPException(status_code=400, detail="Authorization state missing")
 
         decoded_state = json.loads(b64d(state.encode()))
-        if request.cookies[self.cookie] != decoded_state["authentication_id"]:
+        session_id = decoded_state["session_id"]
+        if request.cookies[self.cookie] != session_id:
             raise HTTPException(status_code=400, detail="Authorization state mismatch")
         login_redirect_uri = decoded_state["next"] or self.login_redirect_uri
 
         claims: dict[str, str | int] = self.authenticate(code, self.callback_uri)
 
         session = Session(
+            session_id=session_id,
             sub=str(claims["sub"]),
             name=str(claims["name"]),
             email=str(claims["email"]),
@@ -196,17 +208,15 @@ class OidcMiddleware:
         """Redirect to OIDC authentication"""
 
         # create state
-        authentication_id = f"pre-auth/{str(uuid.uuid4())}"
-        state_payload = {"next": next, "authentication_id": authentication_id}
+        session_id = str(uuid.uuid4())
+        state_payload = {"next": next, "session_id": session_id}
         state = b64e(json.dumps(state_payload).encode()).decode()
 
         response = RedirectResponse(
             self.get_auth_redirect_uri(self.callback_uri, state=state)
         )
 
-        response.set_cookie(
-            key=self.cookie, value=authentication_id, max_age=self.auth_ttl
-        )
+        response.set_cookie(key=self.cookie, value=session_id, max_age=self.auth_ttl)
 
         return response
 

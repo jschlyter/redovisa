@@ -8,6 +8,10 @@ p {
     margin: 10px;
 }
 
+div.sso_provider {
+    text-align: right;
+}
+
 table {
     border: 1px solid;
     padding: 10px;
