@@ -110,7 +110,7 @@ async def submit_expense(request: Request, receipts: list[UploadFile]) -> HTMLRe
 
     response.set_cookie(
         key=request.app.settings.cookies.recipient_account,
-        value=form.get("recipient_account"),
+        value=str(expense_report.recipient.account),
         expires=datetime.now(tz=timezone.utc)
         + timedelta(days=request.app.settings.cookies.recipient_account_days),
     )
