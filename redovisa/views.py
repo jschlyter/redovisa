@@ -3,9 +3,10 @@ import logging
 import smtplib
 from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
+from os.path import dirname, join
 
 from fastapi import APIRouter, Request, UploadFile
-from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse
 
 from .middleware import Session
 from .models import ExpenseReport
@@ -13,6 +14,12 @@ from .models import ExpenseReport
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+favicon_path = join(dirname(__file__), "static/favicon.ico")
+
+
+@router.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    return FileResponse(favicon_path)
 
 
 @router.get("/")
