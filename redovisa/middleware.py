@@ -81,6 +81,8 @@ class OidcMiddleware:
         excluded_re: str | None = None,
         redis_client: redis.Redis | None = None,
     ) -> None:
+        self.logger = logging.getLogger(__class__.__name__)
+
         self.app = app
         self.configuration_uri = configuration_uri
         self.client_id = client_id
@@ -101,15 +103,21 @@ class OidcMiddleware:
         self.login_redirect_uri = login_redirect_uri or self.base_uri
         self.logout_redirect_uri = logout_redirect_uri or self.base_uri
 
-        self.logger = logging.getLogger(__class__.__name__)
         self.session = httpx.Client()
 
         self._configuration = self.get_configuration()
 
         self.key_bundle = KeyBundle(source=self.configuration.jwks_uri)
-        self.logger.debug("Read %d keys", len(self.key_bundle.keys() or []))
+        self.logger.debug(
+            "Read %d keys for %s from %s",
+            len(self.key_bundle.keys() or []),
+            self.configuration.issuer,
+            self.configuration.jwks_uri,
+        )
+
         self.key_jar = KeyJar()
         self.key_jar.add_kb(issuer_id=self.configuration.issuer, kb=self.key_bundle)
+
         self.jwt = JWT(key_jar=self.key_jar)
 
     @property
@@ -117,9 +125,8 @@ class OidcMiddleware:
         return self._configuration
 
     def get_configuration(self) -> OidcConfiguration:
-        endpoints = self.to_dict_or_raise(self.session.get(self.configuration_uri))
-        res = OidcConfiguration.model_validate(endpoints)
-        return res
+        conf = self.to_dict_or_raise(self.session.get(self.configuration_uri))
+        return OidcConfiguration.model_validate(conf)
 
     async def __call__(
         self, scope: Scope, receive: ASGIReceiveCallable, send: ASGISendCallable
