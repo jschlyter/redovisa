@@ -57,6 +57,8 @@ class Settings(BaseSettings):
     context: dict[str, str | dict[str, str]] = Field(default={})
     cookies: CookieSettings = CookieSettings()
 
+    trusted_hosts: list[str] | str | None = "127.0.0.1"
+
     model_config = SettingsConfigDict(toml_file="redovisa.toml")
 
     @classmethod

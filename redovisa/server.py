@@ -27,7 +27,9 @@ class Redovisa(FastAPI):
             host=self.settings.redis.host, port=self.settings.redis.port
         )
 
-        self.add_middleware(ProxyHeadersMiddleware)
+        self.add_middleware(
+            ProxyHeadersMiddleware, trusted_hosts=self.settings.trusted_hosts
+        )
 
         self.add_middleware(
             OidcMiddleware,
