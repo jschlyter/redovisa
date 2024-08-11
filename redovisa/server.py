@@ -27,6 +27,8 @@ class Redovisa(FastAPI):
             host=self.settings.redis.host, port=self.settings.redis.port
         )
 
+        self.add_middleware(ProxyHeadersMiddleware)
+
         self.add_middleware(
             OidcMiddleware,
             configuration_uri=str(self.settings.oidc.configuration_uri),
@@ -41,7 +43,6 @@ class Redovisa(FastAPI):
             login_redirect_uri="/",
             redis_client=self.redis_client,
         )
-        self.add_middleware(ProxyHeadersMiddleware)
 
         self.include_router(views_router)
 
