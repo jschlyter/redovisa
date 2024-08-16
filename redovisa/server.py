@@ -2,6 +2,7 @@ import argparse
 import logging
 
 import redis
+import fakeredis
 import uvicorn
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -23,8 +24,13 @@ class Redovisa(FastAPI):
         self.settings = Settings()
 
         self.templates = Jinja2Templates(directory=self.settings.paths.templates)
-        self.redis_client = redis.StrictRedis(
-            host=self.settings.redis.host, port=self.settings.redis.port
+
+        self.redis_client = (
+            redis.StrictRedis(
+                host=self.settings.redis.host, port=self.settings.redis.port
+            )
+            if self.settings.redis
+            else fakeredis.FakeRedis()
         )
 
         self.add_middleware(
