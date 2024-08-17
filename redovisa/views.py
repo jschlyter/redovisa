@@ -11,6 +11,8 @@ from fastapi.responses import FileResponse, HTMLResponse
 from .middleware import Session
 from .models import ExpenseReport
 
+from fastapi_csrf_protect import CsrfProtect
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
@@ -41,21 +43,32 @@ async def expense_form(request: Request) -> HTMLResponse:
         request.app.settings.cookies.recipient_account, ""
     )
     logger.debug("Recipient account: %s", recipient_account)
-    return request.app.templates.TemplateResponse(
+
+    csrf_protect = CsrfProtect()
+    csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
+
+    response = request.app.templates.TemplateResponse(
         request=request,
         name="expense.j2",
         context={
             "session": session,
             "recipient_account": recipient_account,
+            "csrf_token": csrf_token,
             **request.app.settings.context,
         },
     )
+    csrf_protect.set_csrf_cookie(signed_token, response)
+
+    return response
 
 
 @router.post("/expense")
 async def submit_expense(request: Request, receipts: list[UploadFile]) -> HTMLResponse:
     session: Session = request.state.session
     settings = request.app.settings
+
+    csrf_protect = CsrfProtect()
+    await csrf_protect.validate_csrf(request)
 
     form = await request.form()
     expense_report = ExpenseReport.from_form(
@@ -121,5 +134,7 @@ async def submit_expense(request: Request, receipts: list[UploadFile]) -> HTMLRe
         expires=datetime.now(tz=timezone.utc)
         + timedelta(days=request.app.settings.cookies.recipient_account_days),
     )
+
+    csrf_protect.unset_csrf_cookie(response)
 
     return response

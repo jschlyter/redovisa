@@ -1,3 +1,4 @@
+import uuid
 from os.path import dirname, join
 from typing import Tuple, Type
 
@@ -39,14 +40,24 @@ class RedisSettings(BaseModel):
 
 
 class CookieSettings(BaseModel):
-    session: str = Field(default="session_id")
-    recipient_account: str = Field(default="recipient_account")
+    session: str = Field(default="redovisa_session_id")
+    recipient_account: str = Field(default="redovisa_recipient_account")
     recipient_account_days: int = 180
 
 
 class PathSettings(BaseModel):
     templates: DirectoryPath = Field(default=join(dirname(__file__), "templates"))
     static: DirectoryPath = Field(default=join(dirname(__file__), "static"))
+
+
+class CsrfSettings(BaseModel):
+    cookie_key: str = "redovisa_csrf_token"
+    secret_key: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    token_key: str = "csrf_token"
+    token_location: str = "body"
+
+    def get_settings(self) -> BaseModel:
+        return self
 
 
 class Settings(BaseSettings):
@@ -56,6 +67,7 @@ class Settings(BaseSettings):
     paths: PathSettings = PathSettings()
     context: dict[str, str | dict[str, str]] = Field(default={})
     cookies: CookieSettings = CookieSettings()
+    csrf: CsrfSettings = CsrfSettings()
 
     trusted_hosts: list[str] | str | None = "127.0.0.1"
 

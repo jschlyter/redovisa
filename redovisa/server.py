@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
+from fastapi_csrf_protect import CsrfProtect
 
 from . import __version__
 from .middleware import OidcMiddleware
@@ -59,6 +60,8 @@ class Redovisa(FastAPI):
             StaticFiles(directory=self.settings.paths.static),
             name="static",
         )
+
+        CsrfProtect.load_config(self.settings.csrf.get_settings)
 
 
 def main() -> None:
