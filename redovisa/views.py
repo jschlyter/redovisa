@@ -85,7 +85,7 @@ async def submit_expense(request: Request, receipts: list[UploadFile]) -> HTMLRe
     msg["From"] = settings.smtp.sender
     msg["Reply-To"] = session.email
     msg["To"] = settings.smtp.recipients
-    msg["Cc"] = settings.smtp.recipients_cc
+    msg["Cc"] = settings.smtp.recipients_cc | set([settings.smtp.sender])
     msg["Bcc"] = settings.smtp.recipients_bcc
     msg.set_content(html_body, subtype="html")
 

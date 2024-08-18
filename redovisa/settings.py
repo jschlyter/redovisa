@@ -16,9 +16,9 @@ class SmtpSettings(BaseModel):
     server: str
     port: int = Field(default=465)
     sender: EmailStr
-    recipients: list[EmailStr]
-    recipients_cc: list[EmailStr] = Field(default=[])
-    recipients_bcc: list[EmailStr] = Field(default=[])
+    recipients: set[EmailStr]
+    recipients_cc: set[EmailStr] = Field(default=set())
+    recipients_bcc: set[EmailStr] = Field(default=set())
     subject: str = Field(default="")
     username: str | None = Field(default=None)
     password: str | None = Field(default=None)
