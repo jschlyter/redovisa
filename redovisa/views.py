@@ -45,7 +45,7 @@ async def expense_form(request: Request) -> HTMLResponse:
     logger.debug("Recipient account: %s", recipient_account)
 
     csrf_protect = CsrfProtect()
-    csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
+    csrf_token, csrf_signed_token = csrf_protect.generate_csrf_tokens()
 
     response = request.app.templates.TemplateResponse(
         request=request,
@@ -57,7 +57,7 @@ async def expense_form(request: Request) -> HTMLResponse:
             **request.app.settings.context,
         },
     )
-    csrf_protect.set_csrf_cookie(signed_token, response)
+    csrf_protect.set_csrf_cookie(csrf_signed_token, response)
 
     return response
 
