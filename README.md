@@ -2,4 +2,4 @@
 
 _Redovisa_ är en webbapp för att på ett enkelt sätt kunna hantera utlägg.
 
-Konfigurationen läses in från filen [`redovisa.toml`](redovisa.exempel.toml) vid start.
+Inloggning sker via OpenID Connect och kvitton samt underlag skickas via epost. Konfigurationen läses in från filen [`redovisa.toml`](redovisa.exempel.toml).
