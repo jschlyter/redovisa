@@ -1,7 +1,7 @@
 import contextlib
 import logging
 import smtplib
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, date
 from email.message import EmailMessage
 from os.path import dirname, join
 
@@ -52,6 +52,7 @@ async def expense_form(request: Request) -> HTMLResponse:
         name="expense.j2",
         context={
             "session": session,
+            "date": date.today().isoformat(),
             "recipient_account": recipient_account,
             "csrf_token": csrf_token,
             **request.app.settings.context,

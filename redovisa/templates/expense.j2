@@ -12,15 +12,38 @@
 
 {% set pattern_amount = "^\\d+(.\\d{2})?$" %}
 {% set pattern_account = "^\\d{4}[\\d\\-,\\s]+$" %}
+{% set pattern_date = "^\\d{4}-\\d{2}-\\d{2}$" %}
 
 <body>
 <h1>Redovisa utlägg för {{ organisation }}</h1>
 
-<p>Redovisning av utlägg gjorda av <b>{{ session.name }} &ndash; {{ session.email }}</b></p>
-
 <form method="post" enctype="multipart/form-data">
 
   <table>
+  <tr>
+    <th>Namn</th>
+    <td colspan=3>
+      {{ session.name }}
+    </td>
+  </tr>
+
+  <tr>
+    <th>Epost</th>
+    <td colspan=3>
+      {{ session.email }}
+    </td>
+  </tr>
+
+  <tr>
+    <th>Datum</th>
+    <td colspan=3>
+      <input id="date" name="date" type="text" required type="text" value="{{ date }}" required pattern="{{ pattern_date }}" minlength="10" maxlength="10" size="10"/>
+    </td>
+  </tr>
+
+  <tr>
+    <td colspan=4><hr/></td>
+  </tr>
 
   <tr>
     <th>Konto</th>

@@ -53,6 +53,6 @@ input[type="text"].amount {
     width: 100px;
 }
 
-input:invalid#recipient_account {
+input:invalid#recipient_account, input:invalid#date {
     color: red;
 }

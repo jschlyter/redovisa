@@ -1,3 +1,4 @@
+from datetime import date
 import re
 import uuid
 
@@ -21,6 +22,7 @@ class Recipient(BaseModel):
 
 class ExpenseReport(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    date: date
     items: list[ExpenseItem]
     total_amount: float
     recipient: Recipient
@@ -49,6 +51,7 @@ class ExpenseReport(BaseModel):
                     )
 
         return cls(
+            date=form["date"],
             items=items,
             total_amount=sum([item.amount for item in items]),
             recipient=Recipient(

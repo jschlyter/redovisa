@@ -18,7 +18,11 @@
     <td>{{ expense_report.recipient.account }}</td>
   </tr>
   <tr>
-    <th>Belopp</th>
+    <th>Datum</th>
+    <td>{{ expense_report.date }}</td>
+  </tr>
+  <tr>
+    <th>Totalsumma</th>
     <td>{{ "%0.2f" | format(expense_report.total_amount | float) }} kr</td>
   </tr>
 </table></p>
