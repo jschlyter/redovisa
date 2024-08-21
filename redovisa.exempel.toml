@@ -1,0 +1,40 @@
+trusted_hosts = "127.0.0.1"
+
+[smtp]
+test = true
+server = "mail.example.com"
+port = 25
+starttls = true
+sender = "redovisa@example.com"
+recipients = ["redovisa@example.com"]
+recipients_cc = ["cc@example.com"]
+recipients_bcc = ["bcc@example.com"]
+subject = "Redovisning av utlägg"
+
+[oidc]
+base_uri = "http://127.0.0.1:8080/"
+#configuration_uri = "https://scoutid.se/simplesaml/module.php/oidc/openid-configuration.php"
+client_id = "REDACTED"
+client_secret = "REDACTED"
+
+#[paths]
+#templates = "redovisa/templates/"
+#static = "redovisa/static/"
+
+[context]
+organisation = "Organisation (TEST)"
+name = "Förnamn Eftermiddag"
+email = "redovisa@example.com"
+sso_provider = "ScoutID"
+sso_provider_uri = "https://scoutid.se/"
+sso_provider_img = "https://cdn.scouterna.net/scoutid/login.png"
+
+[context.accounts]
+4210 = "Grenkostnad Bäver"
+4211 = "Grenkostnad Spårare"
+4212 = "Grenkostnad Upptäckare"
+4213 = "Grenkostnad Äventyrare"
+4214 = "Grenkostnad Utmanare"
+4610 = "Kostnader kårläger"
+4611 = "Kostnader sommarläger"
+0000 = "Övrigt"

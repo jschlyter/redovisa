@@ -2,24 +2,113 @@
 
 <head>
 <title>Redovisa</title>
+<link rel="stylesheet" href="/static/redovisa.css">
+<link rel="stylesheet" href="/static/buttons.css">
+<link rel="icon" href="/static/favicon.ico">
+<meta charset="utf-8"/>
+<script type="text/javascript" src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script type="text/javascript" src="/static/functions.js"></script>
 </head>
 
+{% set pattern_amount = "^\\d+(.\\d{2})?$" %}
+{% set pattern_account = "^\\d{4}[\\d\\-,\\s]+$" %}
+{% set pattern_date = "^\\d{4}-\\d{2}-\\d{2}$" %}
 
 <body>
-<h1>Redovisa utlägg</h1>
+<h1>Redovisa utlägg för {{ organisation }}</h1>
 
-<form action="/submit" method="post" enctype="multipart/form-data">
+<form method="post" enctype="multipart/form-data">
 
-  <label for="total_amount">Totalbelopp:</label><br/>
-  <input name="total_amount" type="text" required pattern="^\d+(\.\d{2})?$"/><br/>
+  <table>
+  <tr>
+    <th>Namn</th>
+    <td colspan=3>
+      {{ session.name }}
+    </td>
+  </tr>
 
-  <label for="account">Kontonummer:</label><br/>
-  <input name="account" type="text" required pattern="^\d+$"/><br/>
+  <tr>
+    <th>Epost</th>
+    <td colspan=3>
+      {{ session.email }}
+    </td>
+  </tr>
 
-  <label for="receipt">Kvitto:</label><br/>
-  <input name="receipt" type="file" required accept="image/*" capture="camera"/><br/>
+  <tr>
+    <th>Datum</th>
+    <td colspan=3>
+      <input id="date" name="date" type="text" required type="text" value="{{ date }}" required pattern="{{ pattern_date }}" minlength="10" maxlength="10" size="10"/>
+    </td>
+  </tr>
 
-  <input type="submit" value="Skicka in">
+  <tr>
+    <td colspan=4><hr/></td>
+  </tr>
+
+  <tr>
+    <th>Konto</th>
+    <th>Beskrivning</th>
+    <th class="amount">Belopp</th>
+    <th></th>
+  </tr>
+
+  {% for row in range(10) %}
+
+  <tr>
+    <td>
+      <select name="{{row}}:account" id="acount">
+        <option value="">Välj konto…</option>
+        {% for account, description in accounts.items() %}
+        {% if account | int %}
+        <option value="{{ account }}">{{ description }} ({{ account }})</option>
+        {% else %}
+        <option value="{{ account }}">{{ description }}</option>
+        {% endif %}
+        {% endfor %}
+      </select>
+    </td>
+    <td><input name="{{row}}:description" type="text" class="description" maxlength="132"/></td>
+    <td><input name="{{row}}:amount" type="text" onblur="updateTotal()" value="0.00" class="amount" pattern="{{ pattern_amount }}"/></td>
+    <td></td>
+  </tr>
+
+  {% endfor %}
+
+  <tr>
+    <th><b>Totalsumma</b></th>
+    <td></td>
+    <td class="amount"><div id="total">0.00</div></td>
+    <td>kr</td>
+  </tr>
+
+  <tr>
+    <td colspan=4><hr/></td>
+  </tr>
+
+  <tr>
+    <th>Bifogade kvitton (PDF eller PNG)</th>
+    <td colspan=3>
+      <input name="receipts" type="file" required accept="image/*,application/pdf" capture="camera" multiple="multiple"/>
+    </td>
+  </tr>
+
+  <tr>
+    <th>Kontonummer</th>
+    <td colspan=3>
+      <input id="recipient_account", name="recipient_account" type="text" value="{{ recipient_account }}" required pattern="{{ pattern_account }}"/>
+    </td>
+  </tr>
+
+  <tr>
+    <td class="reminder" colspan=4>Glöm inte clearingnummer!</td>
+  </tr>
+
+  </table>
+
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
+
+  <input class="button-4" type="submit" value="Skicka in utläggsrapport">
+  <input class="button-4" type="reset" value="Rensa">
 
 </form>
 </body>

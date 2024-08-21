@@ -1,13 +1,14 @@
 import argparse
 import logging
-from os.path import dirname, join
 
 import redis
+import fakeredis
 import uvicorn
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
+from fastapi_csrf_protect import CsrfProtect
 
 from . import __version__
 from .middleware import OidcMiddleware
@@ -18,14 +19,23 @@ logger = logging.getLogger(__name__)
 
 
 class Redovisa(FastAPI):
-
     def __init__(self):
         super().__init__()
-        self.settings = Settings()
-        self.templates = Jinja2Templates(directory=join(dirname(__file__), "templates"))
 
-        redis_client = redis.StrictRedis(
-            host=self.settings.redis.host, port=self.settings.redis.port
+        self.settings = Settings()
+
+        self.templates = Jinja2Templates(directory=self.settings.paths.templates)
+
+        self.redis_client = (
+            redis.StrictRedis(
+                host=self.settings.redis.host, port=self.settings.redis.port
+            )
+            if self.settings.redis
+            else fakeredis.FakeRedis()
+        )
+
+        self.add_middleware(
+            ProxyHeadersMiddleware, trusted_hosts=self.settings.trusted_hosts
         )
 
         self.add_middleware(
@@ -34,18 +44,24 @@ class Redovisa(FastAPI):
             client_id=self.settings.oidc.client_id,
             client_secret=self.settings.oidc.client_secret,
             base_uri=str(self.settings.oidc.base_uri),
-            excluded_paths=["/"],
-            redis_client=redis_client,
+            session_ttl=self.settings.oidc.session_ttl,
+            auth_ttl=self.settings.oidc.auth_ttl,
+            cookie=self.settings.cookies.session,
+            excluded_paths=["/", "/favicon.ico"],
+            excluded_re=r"^/static/",
+            login_redirect_uri="/",
+            redis_client=self.redis_client,
         )
-        self.add_middleware(ProxyHeadersMiddleware)
 
         self.include_router(views_router)
 
         self.mount(
             "/static",
-            StaticFiles(directory=join(dirname(__file__), "static")),
+            StaticFiles(directory=self.settings.paths.static),
             name="static",
         )
+
+        CsrfProtect.load_config(self.settings.csrf.get_settings)
 
 
 def main() -> None:

@@ -1,0 +1,64 @@
+body {
+    font-family: Franklin Gothic Light,Franklin Gothic,ITC Franklin Gothic,Arial,sans-serif;
+    color: #003660;
+    margin: 10px;
+}
+
+h1 {
+    margin: 10px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+p {
+    margin: 10px;
+}
+
+div.sso_provider {
+    text-align: right;
+}
+
+table {
+    border: 1px solid;
+    padding: 10px;
+    margin: 10px;
+}
+
+th {
+    font-family: Franklin Gothic Medium,Franklin Gothic,ITC Franklin Gothic,Arial,sans-serif;
+    text-align: left;
+}
+
+input.amount {
+    text-align: right;
+}
+
+th.amount, td.amount {
+    text-align: right;
+}
+
+td.reminder {
+    font-size: 10pt;
+}
+
+input[type="submit"] {
+    margin: 10px;
+    background-color: lightgreen;
+}
+
+input[type="reset"] {
+    margin: 10px;
+    background-color: darkgray;
+}
+
+input[type="text"] {
+    width: 200px;
+}
+
+input[type="text"].amount {
+    width: 100px;
+}
+
+input:invalid#recipient_account, input:invalid#date {
+    color: red;
+}
