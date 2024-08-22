@@ -12,26 +12,28 @@ from pydantic_settings import (
 
 
 class SmtpSettings(BaseModel):
-    test: bool = False
-    server: str
-    port: int = Field(default=465)
-    sender: EmailStr
-    recipients: set[EmailStr]
-    recipients_cc: set[EmailStr] = Field(default=set())
-    recipients_bcc: set[EmailStr] = Field(default=set())
-    subject: str = Field(default="")
-    username: str | None = Field(default=None)
-    password: str | None = Field(default=None)
-    starttls: bool = Field(default=True)
+    test: bool = Field(default=False, description="Do not send any mail if true")
+    server: str = Field(description="SMTP server hostname")
+    port: int = Field(default=465, description="SMTP server port")
+    sender: EmailStr = Field(description="SMTP sender")
+    recipients: set[EmailStr] = Field(description="Default receipients")
+    recipients_cc: set[EmailStr] = Field(default=set(), description="Additional receipients (cc)")
+    recipients_bcc: set[EmailStr] = Field(default=set(), description="Additional receipients (bcc)")
+    subject: str = Field(default="", description="Mail subject")
+    username: str | None = Field(default=None, description="SMTP authentication username")
+    password: str | None = Field(default=None, description="SMTP authentication password")
+    starttls: bool = Field(default=True, description="Use SMTP STARTTLS")
 
 
 class OidcSettings(BaseModel):
-    configuration_uri: HttpUrl
-    client_id: str
-    client_secret: str
-    base_uri: HttpUrl
-    auth_ttl: int = 300
-    session_ttl: int = 86400
+    configuration_uri: HttpUrl = Field(
+        description="OIDC Configuration URI, usually issuer/.well-known/openid-configuration"
+    )
+    client_id: str = Field(description="OIDC Client Identifier")
+    client_secret: str = Field(description="OIDC Client Secret")
+    base_uri: HttpUrl = Field(description="Base URI for the app itself")
+    auth_ttl: int = Field(default=300, description="Authentication timeout")
+    session_ttl: int = Field(default=86400, description="Default session timeout (if not set by OIDC)")
 
 
 class RedisSettings(BaseModel):
