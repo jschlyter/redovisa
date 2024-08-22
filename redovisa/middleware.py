@@ -1,3 +1,5 @@
+"""OpenID Connect Middleware"""
+
 import json
 import logging
 import re
@@ -34,7 +36,7 @@ class Session(BaseModel):
     claims: dict
 
     @staticmethod
-    def get_redis_key(session_id: str) -> str:
+    def get_cache_key(session_id: str) -> str:
         return f"session:{session_id}"
 
 
@@ -195,7 +197,7 @@ class OidcMiddleware:
         expires_at = int(claims.get("exp", time.time() + self.session_ttl))
 
         self.redis_client.set(
-            Session.get_redis_key(session.session_id),
+            Session.get_cache_key(session.session_id),
             session.model_dump_json(),
             exat=expires_at,
         )
@@ -232,14 +234,14 @@ class OidcMiddleware:
 
         response = RedirectResponse(self.logout_redirect_uri)
         if session_id := request.cookies.get(self.cookie):
-            self.redis_client.delete(Session.get_redis_key(session_id))
+            self.redis_client.delete(Session.get_cache_key(session_id))
             response.set_cookie(self.cookie, "", expires=0)
         return response
 
     async def get_session(self, request: Request) -> Session | None:
         if session_id := request.cookies.get(self.cookie):  # noqa
-            if session_data := self.redis_client.get(Session.get_redis_key(session_id)):
-                return Session.model_validate_json(session_data)
+            if session_data := self.redis_client.get(Session.get_cache_key(session_id)):
+                return Session.model_validate_json(str(session_data))
 
     def authenticate(
         self, code: str, callback_uri: str, get_user_info: bool = False
