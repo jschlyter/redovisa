@@ -21,7 +21,9 @@
   <input type="submit" class="button-4" value="Redovisa utlägg" />
 </form>
 
+{% if sso_provider_uri is defined %}
 <div class="sso_provider"><a href="{{ sso_provider_uri }}"><img src="{{ sso_provider_img }}" alt="{{ sso_provider }}" height="32"/></a></div>
+{% endif %}
 
 </body>
 
