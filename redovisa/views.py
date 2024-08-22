@@ -39,9 +39,7 @@ async def index(request: Request) -> HTMLResponse:
 async def expense_form(request: Request) -> HTMLResponse:
     session: Session = request.state.session
     logger.debug("Session: %s", session)
-    recipient_account = request.cookies.get(
-        request.app.settings.cookies.recipient_account, ""
-    )
+    recipient_account = request.cookies.get(request.app.settings.cookies.recipient_account, "")
     logger.debug("Recipient account: %s", recipient_account)
 
     csrf_protect = CsrfProtect()
@@ -72,14 +70,10 @@ async def submit_expense(request: Request, receipts: list[UploadFile]) -> HTMLRe
     await csrf_protect.validate_csrf(request)
 
     form = await request.form()
-    expense_report = ExpenseReport.from_form(
-        form, session, request.app.settings.context.get("accounts", {})
-    )
+    expense_report = ExpenseReport.from_form(form, session, request.app.settings.context.get("accounts", {}))
 
     template = request.app.templates.get_template(name="mail.j2")
-    html_body = template.render(
-        expense_report=expense_report, receipts=receipts, **request.app.settings.context
-    )
+    html_body = template.render(expense_report=expense_report, receipts=receipts, **request.app.settings.context)
 
     msg = EmailMessage()
     msg["Subject"] = settings.smtp.subject
@@ -132,8 +126,7 @@ async def submit_expense(request: Request, receipts: list[UploadFile]) -> HTMLRe
     response.set_cookie(
         key=request.app.settings.cookies.recipient_account,
         value=str(expense_report.recipient.account),
-        expires=datetime.now(tz=timezone.utc)
-        + timedelta(days=request.app.settings.cookies.recipient_account_days),
+        expires=datetime.now(tz=timezone.utc) + timedelta(days=request.app.settings.cookies.recipient_account_days),
     )
 
     csrf_protect.unset_csrf_cookie(response)

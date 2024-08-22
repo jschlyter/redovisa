@@ -130,9 +130,7 @@ class OidcMiddleware:
         conf = self.to_dict_or_raise(self.session.get(self.configuration_uri))
         return OidcConfiguration.model_validate(conf)
 
-    async def __call__(
-        self, scope: Scope, receive: ASGIReceiveCallable, send: ASGISendCallable
-    ) -> None:
+    async def __call__(self, scope: Scope, receive: ASGIReceiveCallable, send: ASGISendCallable) -> None:
         if scope["type"] == "http":
             path = scope.get("path")
             request = Request(scope)
@@ -211,9 +209,7 @@ class OidcMiddleware:
 
         return response
 
-    async def login(
-        self, request: Request, next: str | None = None
-    ) -> RedirectResponse:
+    async def login(self, request: Request, next: str | None = None) -> RedirectResponse:
         """Redirect to OIDC authentication"""
 
         # create state
@@ -221,9 +217,7 @@ class OidcMiddleware:
         state_payload = {"next": next, "session_id": session_id}
         state = b64e(json.dumps(state_payload).encode()).decode()
 
-        response = RedirectResponse(
-            self.get_auth_redirect_uri(self.callback_uri, state=state)
-        )
+        response = RedirectResponse(self.get_auth_redirect_uri(self.callback_uri, state=state))
 
         response.set_cookie(key=self.cookie, value=session_id, max_age=self.auth_ttl)
 
@@ -243,9 +237,7 @@ class OidcMiddleware:
             if session_data := self.redis_client.get(Session.get_cache_key(session_id)):
                 return Session.model_validate_json(str(session_data))
 
-    def authenticate(
-        self, code: str, callback_uri: str, get_user_info: bool = False
-    ) -> dict:
+    def authenticate(self, code: str, callback_uri: str, get_user_info: bool = False) -> dict:
         auth_token = self.get_auth_token(code, callback_uri)
         if get_user_info:
             access_token = auth_token["access_token"]
@@ -269,39 +261,28 @@ class OidcMiddleware:
         return f"{self.configuration.authorization_endpoint}?{params}"
 
     def get_auth_token(self, code: str, callback_uri: str) -> dict:
-        authstr = (
-            "Basic "
-            + b64encode(f"{self.client_id}:{self.client_secret}".encode()).decode()
-        )
+        authstr = "Basic " + b64encode(f"{self.client_id}:{self.client_secret}".encode()).decode()
         headers = {"Authorization": authstr}
         data = {
             "grant_type": "authorization_code",
             "code": code,
             "redirect_uri": callback_uri,
         }
-        response = self.session.post(
-            self.configuration.token_endpoint, data=data, headers=headers
-        )
+        response = self.session.post(self.configuration.token_endpoint, data=data, headers=headers)
         return self.to_dict_or_raise(response)
 
     def get_user_info(self, access_token: str) -> dict:
         bearer = f"Bearer {access_token}"
         headers = {"Authorization": bearer}
-        response = self.session.get(
-            self.configuration.userinfo_endpoint, headers=headers
-        )
+        response = self.session.get(self.configuration.userinfo_endpoint, headers=headers)
         return self.to_dict_or_raise(response)
 
     def to_dict_or_raise(self, response: httpx.Response) -> dict:
         if response.status_code != 200:
             self.logger.error(f"Returned with status {response.status_code}.")
-            raise OpenIDConnectException(
-                f"Status code {response.status_code} for {response.url}."
-            )
+            raise OpenIDConnectException(f"Status code {response.status_code} for {response.url}.")
         try:
             return response.json()
         except JSONDecodeError as exc:
             self.logger.error("Unable to decode json.")
-            raise OpenIDConnectException(
-                "Was not able to retrieve data from the response."
-            ) from exc
+            raise OpenIDConnectException("Was not able to retrieve data from the response.") from exc
