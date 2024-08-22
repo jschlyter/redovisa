@@ -1,18 +1,19 @@
 import argparse
 import logging
 
-import redis
 import fakeredis
+import redis
 import uvicorn
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 from fastapi_csrf_protect import CsrfProtect
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from . import __version__
 from .middleware import OidcMiddleware
 from .settings import Settings
+from .users import UsersCollection
 from .views import router as views_router
 
 logger = logging.getLogger(__name__)
@@ -25,6 +26,8 @@ class Redovisa(FastAPI):
         self.settings = Settings()
 
         self.templates = Jinja2Templates(directory=self.settings.paths.templates)
+
+        users = UsersCollection(str(self.settings.users_file)) if self.settings.users_file else None
 
         self.redis_client = (
             redis.StrictRedis(host=self.settings.redis.host, port=self.settings.redis.port)
@@ -43,10 +46,11 @@ class Redovisa(FastAPI):
             session_ttl=self.settings.oidc.session_ttl,
             auth_ttl=self.settings.oidc.auth_ttl,
             cookie=self.settings.cookies.session,
-            excluded_paths=["/", "/favicon.ico"],
+            excluded_paths=["/", "/favicon.ico", "/forbidden"],
             excluded_re=r"^/static/",
             login_redirect_uri="/",
             redis_client=self.redis_client,
+            users=users,
         )
 
         self.include_router(views_router)

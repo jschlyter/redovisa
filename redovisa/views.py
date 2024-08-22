@@ -1,17 +1,16 @@
 import contextlib
 import logging
 import smtplib
-from datetime import datetime, timedelta, timezone, date
+from datetime import date, datetime, timedelta, timezone
 from email.message import EmailMessage
 from os.path import dirname, join
 
 from fastapi import APIRouter, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse
+from fastapi_csrf_protect import CsrfProtect
 
 from .middleware import Session
 from .models import ExpenseReport
-
-from fastapi_csrf_protect import CsrfProtect
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +28,17 @@ async def index(request: Request) -> HTMLResponse:
     return request.app.templates.TemplateResponse(
         request=request,
         name="home.j2",
+        context={
+            **request.app.settings.context,
+        },
+    )
+
+
+@router.get("/forbidden")
+async def forbidden(request: Request) -> HTMLResponse:
+    return request.app.templates.TemplateResponse(
+        request=request,
+        name="forbidden.j2",
         context={
             **request.app.settings.context,
         },

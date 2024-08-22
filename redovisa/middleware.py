@@ -7,6 +7,7 @@ import time
 import urllib.parse
 import uuid
 from base64 import b64encode
+from collections.abc import Container
 from datetime import datetime, timezone
 from json import JSONDecodeError
 from urllib.parse import urljoin
@@ -76,12 +77,14 @@ class OidcMiddleware:
         auth_ttl: int = 300,
         login_path: str = "/login",
         logout_path: str = "/logout",
+        forbidden_path: str = "/forbidden",
         callback_path: str = "/callback",
         login_redirect_uri: str | None = None,
         logout_redirect_uri: str | None = None,
         excluded_paths: list[str] | None = None,
         excluded_re: str | None = None,
         redis_client: redis.Redis | None = None,
+        users: Container | None = None,
     ) -> None:
         self.logger = logging.getLogger(__class__.__name__)
 
@@ -96,10 +99,12 @@ class OidcMiddleware:
         self.auth_ttl = auth_ttl
         self.login_path = login_path
         self.logout_path = logout_path
+        self.forbidden_path = forbidden_path
         self.callback_path = callback_path
         self.excluded_paths = set(excluded_paths or [])
         self.excluded_re = re.compile(excluded_re) if excluded_re else None
         self.redis_client = redis_client or redis.StrictRedis()
+        self.users = users
 
         self.callback_uri = urljoin(self.base_uri, callback_path)
         self.login_redirect_uri = login_redirect_uri or self.base_uri
@@ -192,6 +197,11 @@ class OidcMiddleware:
             claims=claims,
         )
 
+        if self.users and session.email not in self.users:
+            response = RedirectResponse(self.forbidden_path)
+            response.set_cookie(self.cookie, "", expires=0)
+            return response
+
         expires_at = int(claims.get("exp", time.time() + self.session_ttl))
 
         self.redis_client.set(
@@ -235,7 +245,7 @@ class OidcMiddleware:
     async def get_session(self, request: Request) -> Session | None:
         if session_id := request.cookies.get(self.cookie):  # noqa
             if session_data := self.redis_client.get(Session.get_cache_key(session_id)):
-                return Session.model_validate_json(str(session_data))
+                return Session.model_validate_json(session_data.decode())
 
     def authenticate(self, code: str, callback_uri: str, get_user_info: bool = False) -> dict:
         auth_token = self.get_auth_token(code, callback_uri)

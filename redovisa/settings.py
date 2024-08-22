@@ -2,7 +2,7 @@ import uuid
 from os.path import dirname, join
 from typing import Tuple, Type
 
-from pydantic import BaseModel, DirectoryPath, EmailStr, Field, HttpUrl
+from pydantic import BaseModel, DirectoryPath, EmailStr, Field, FilePath, HttpUrl
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
@@ -72,6 +72,7 @@ class Settings(BaseSettings):
     csrf: CsrfSettings = CsrfSettings()
 
     trusted_hosts: list[str] | str | None = "127.0.0.1"
+    users_file: FilePath | None = None
 
     model_config = SettingsConfigDict(toml_file="redovisa.toml")
 
