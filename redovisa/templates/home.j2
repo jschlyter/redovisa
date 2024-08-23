@@ -14,7 +14,9 @@
 
 <h1>Redovisa utlägg för {{ organisation }}</h1>
 
-<p>Via den här webbplatsen redovisar du utlägg för {{ organisation }}.<p/>
+<p>Via den här webbplatsen redovisar du utlägg för {{ organisation }}.
+{% if sso_provider is defined %}Inloggning sker via {{ sso_provider }}.{% endif %}
+<p/>
 
 
 <form action="/expense">
