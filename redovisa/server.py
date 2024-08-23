@@ -27,7 +27,14 @@ class Redovisa(FastAPI):
 
         self.templates = Jinja2Templates(directory=self.settings.paths.templates)
 
-        users = UsersCollection(str(self.settings.users_file)) if self.settings.users_file else None
+        users = (
+            UsersCollection(
+                filename=str(self.settings.users.file),
+                ttl=self.settings.users.ttl,
+            )
+            if self.settings.users.file
+            else None
+        )
 
         self.redis_client = (
             redis.StrictRedis(host=self.settings.redis.host, port=self.settings.redis.port)
@@ -35,7 +42,7 @@ class Redovisa(FastAPI):
             else fakeredis.FakeRedis()
         )
 
-        self.add_middleware(ProxyHeadersMiddleware, trusted_hosts=self.settings.trusted_hosts)
+        self.add_middleware(ProxyHeadersMiddleware, trusted_hosts=self.settings.http.trusted_hosts)
 
         self.add_middleware(
             OidcMiddleware,

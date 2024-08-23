@@ -37,14 +37,14 @@ class OidcSettings(BaseModel):
 
 
 class RedisSettings(BaseModel):
-    host: str
-    port: int = 6379
+    host: str = Field(description="Redis hostname")
+    port: int = Field(description="Redis port", default=6379)
 
 
 class CookieSettings(BaseModel):
     session: str = Field(default="redovisa_session_id")
     recipient_account: str = Field(default="redovisa_recipient_account")
-    recipient_account_days: int = 180
+    recipient_account_days: int = Field(default=180, description="Number of days to keep receipient account")
 
 
 class PathSettings(BaseModel):
@@ -62,6 +62,15 @@ class CsrfSettings(BaseModel):
         return self
 
 
+class UsersSettings(BaseModel):
+    file: FilePath | None = Field(default=None, description="File with list of allowed email addresses")
+    ttl: int = Field(default=300, description="User cache TTL")
+
+
+class HttpSettings(BaseModel):
+    trusted_hosts: list[str] | str | None = Field(default="127.0.0.1", description="List of trusted HTTP proxies")
+
+
 class Settings(BaseSettings):
     smtp: SmtpSettings
     oidc: OidcSettings
@@ -70,9 +79,8 @@ class Settings(BaseSettings):
     context: dict[str, str | dict[str, str]] = Field(default={})
     cookies: CookieSettings = CookieSettings()
     csrf: CsrfSettings = CsrfSettings()
-
-    trusted_hosts: list[str] | str | None = "127.0.0.1"
-    users_file: FilePath | None = None
+    users: UsersSettings = UsersSettings()
+    http: HttpSettings = HttpSettings()
 
     model_config = SettingsConfigDict(toml_file="redovisa.toml")
 
