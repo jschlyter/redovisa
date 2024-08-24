@@ -181,11 +181,11 @@ class OidcMiddleware:
         if not (state := request.query_params.get("state")):
             raise HTTPException(status_code=400, detail="Authorization state missing")
 
-        decoded_state = json.loads(b64d(state.encode()))
-        session_id = decoded_state["session_id"]
+        state_payload = json.loads(b64d(state.encode()))
+        session_id = state_payload["session_id"]
         if request.cookies[self.cookie] != session_id:
             raise HTTPException(status_code=400, detail="Authorization state mismatch")
-        login_redirect_uri = decoded_state["next"] or self.login_redirect_uri
+        login_redirect_uri = state_payload["next"] or self.login_redirect_uri
 
         claims: dict[str, str | int] = self.authenticate(code, self.callback_uri)
 
