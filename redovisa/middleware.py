@@ -189,6 +189,8 @@ class OidcMiddleware:
 
         claims: dict[str, str | int] = self.authenticate(code, self.callback_uri)
 
+        self.logger.info("Received claims %s", json.dumps(claims))
+
         session = Session(
             session_id=session_id,
             sub=str(claims["sub"]),
