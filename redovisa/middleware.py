@@ -197,8 +197,6 @@ class OidcMiddleware:
             claims=claims,
         )
 
-        self.logger.info("Authenticated sub=%s email=%s", session.sub, session.email)
-
         if self.users and session.email not in self.users:
             self.logger.warning("User %s forbiddden", session.email)
             response = RedirectResponse(self.forbidden_path)
@@ -211,6 +209,15 @@ class OidcMiddleware:
             Session.get_cache_key(session.session_id),
             session.model_dump_json(),
             exat=expires_at,
+        )
+
+        self.logger.info(
+            "Created session %s with sub=%s email=%s from %s:%s",
+            session.session_id,
+            session.sub,
+            session.email,
+            request.client.host,
+            request.client.port,
         )
 
         response = RedirectResponse(login_redirect_uri)
