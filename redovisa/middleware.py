@@ -166,7 +166,7 @@ class OidcMiddleware:
                     response = await self.login(request, next=path)
                     return await response(scope, receive, send)
 
-                self.logger.info("Found session %s", session.session_id)
+                self.logger.info("Found session %s for sub=%s email=%s", session.session_id, session.sub, session.email)
 
             scope["state"]["session"] = session
 
@@ -197,7 +197,10 @@ class OidcMiddleware:
             claims=claims,
         )
 
+        self.logger.info("Authenticated sub=%s email=%s", session.sub, session.email)
+
         if self.users and session.email not in self.users:
+            self.logger.warning("User %s forbiddden", session.email)
             response = RedirectResponse(self.forbidden_path)
             response.set_cookie(self.cookie, "", expires=0)
             return response
@@ -271,7 +274,13 @@ class OidcMiddleware:
         return f"{self.configuration.authorization_endpoint}?{params}"
 
     def get_auth_token(self, code: str, callback_uri: str) -> dict:
-        authstr = "Basic " + b64encode(f"{self.client_id}:{self.client_secret}".encode()).decode()
+        authstr = (
+            "Basic "
+            + b64encode(
+                f"{self.client_id}:{
+                    self.client_secret}".encode()
+            ).decode()
+        )
         headers = {"Authorization": authstr}
         data = {
             "grant_type": "authorization_code",

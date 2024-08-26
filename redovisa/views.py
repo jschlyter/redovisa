@@ -117,7 +117,7 @@ async def submit_expense(request: Request, receipts: list[UploadFile]) -> HTMLRe
         )
 
     if settings.smtp.test:
-        logger.debug("Sending email to %s", msg["To"])
+        logger.debug("Test email to %s cc %s bcc %s", msg["To"], msg["Cc"], msg["Bcc"])
         print(html_body)
     else:
         with smtplib.SMTP(settings.smtp.server, settings.smtp.port) as server:
@@ -126,6 +126,8 @@ async def submit_expense(request: Request, receipts: list[UploadFile]) -> HTMLRe
             if settings.smtp.username and settings.smtp.password:
                 server.login(settings.smtp.username, settings.smtp.password)
             server.send_message(msg)
+
+    logger.info("Processed %s to %s cc %s bcc %s", expense_report.id, msg["To"], msg["Cc"], msg["Bcc"])
 
     response = request.app.templates.TemplateResponse(
         request=request,
