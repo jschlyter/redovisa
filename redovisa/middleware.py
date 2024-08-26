@@ -212,12 +212,10 @@ class OidcMiddleware:
         )
 
         self.logger.info(
-            "Created session %s with sub=%s email=%s from %s:%s",
+            "Created session %s with sub=%s email=%s",
             session.session_id,
             session.sub,
             session.email,
-            request.client.host,
-            request.client.port,
         )
 
         response = RedirectResponse(login_redirect_uri)
