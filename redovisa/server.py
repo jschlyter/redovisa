@@ -11,16 +11,17 @@ from fastapi_csrf_protect import CsrfProtect
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from . import __version__
-from .middleware import OidcMiddleware
+from .logging import LoggingMiddleware, get_logger, setup_logging
+from .oidc import OidcMiddleware
 from .settings import Settings
 from .users import UsersCollection
 from .views import router as views_router
 
-logger = logging.getLogger(__name__)
-
 
 class Redovisa(FastAPI):
     def __init__(self):
+        self.logger = get_logger()
+
         super().__init__()
 
         self.settings = Settings()
@@ -42,6 +43,7 @@ class Redovisa(FastAPI):
             else fakeredis.FakeRedis()
         )
 
+        self.add_middleware(LoggingMiddleware)
         self.add_middleware(ProxyHeadersMiddleware, trusted_hosts=self.settings.http.trusted_hosts)
 
         self.add_middleware(
@@ -70,6 +72,8 @@ class Redovisa(FastAPI):
 
         CsrfProtect.load_config(self.settings.csrf.get_settings)
 
+        self.logger.debug("Redovisa initialized")
+
 
 def main() -> None:
     """Main function"""
@@ -79,15 +83,11 @@ def main() -> None:
     parser.add_argument("--host", help="Host address to bind to", default="0.0.0.0")
     parser.add_argument("--port", help="Port to listen on", type=int, default=8080)
     parser.add_argument("--debug", action="store_true", help="Enable debugging")
+    parser.add_argument("--log-json", action="store_true", help="Enable JSON loggging")
 
     args = parser.parse_args()
 
-    if args.debug:
-        logging.basicConfig(level=logging.DEBUG)
-        log_level = "debug"
-    else:
-        logging.basicConfig(level=logging.INFO)
-        log_level = "info"
+    setup_logging(level=logging.DEBUG if args.debug else logging.INFO, log_json=args.log_json)
 
     app = Redovisa()
 
@@ -95,7 +95,7 @@ def main() -> None:
         app,
         host=args.host,
         port=args.port,
-        log_level=log_level,
+        log_level="debug" if args.debug else "info",
         headers=[("server", f"redovisa/{__version__}")],
     )
 

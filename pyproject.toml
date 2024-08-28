@@ -21,6 +21,7 @@ cryptojwt = "^1.9.2"
 python-multipart = "^0.0.9"
 fakeredis = "^2.23.5"
 fastapi-csrf-protect = "^0.3.4"
+structlog = "^24.4.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.5.0"

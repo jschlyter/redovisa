@@ -1,10 +1,10 @@
-from datetime import date
 import re
 import uuid
+from datetime import date
 
 from pydantic import BaseModel, Field
 
-from .middleware import Session
+from .oidc import Session
 
 
 class ExpenseItem(BaseModel):

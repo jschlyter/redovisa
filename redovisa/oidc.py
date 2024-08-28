@@ -1,7 +1,6 @@
 """OpenID Connect Middleware"""
 
 import json
-import logging
 import re
 import time
 import urllib.parse
@@ -28,9 +27,12 @@ from uvicorn._types import (
     Scope,
 )
 
+from .logging import get_logger
+
 
 class Session(BaseModel):
     session_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    iss: str
     sub: str
     email: str
     name: str
@@ -86,7 +88,7 @@ class OidcMiddleware:
         redis_client: redis.Redis | None = None,
         users: Container | None = None,
     ) -> None:
-        self.logger = logging.getLogger(__class__.__name__)
+        self.logger = get_logger()
 
         self.app = app
         self.configuration_uri = configuration_uri
@@ -115,11 +117,12 @@ class OidcMiddleware:
         self._configuration = self.get_configuration()
 
         self.key_bundle = KeyBundle(source=self.configuration.jwks_uri)
+
         self.logger.debug(
-            "Read %d keys for %s from %s",
-            len(self.key_bundle.keys() or []),
-            self.configuration.issuer,
-            self.configuration.jwks_uri,
+            "Read issuer keys",
+            key_count=len(self.key_bundle.keys() or []),
+            oidc_issuer=self.configuration.issuer,
+            oidc_jwks_uri=self.configuration.jwks_uri,
         )
 
         self.key_jar = KeyJar()
@@ -155,18 +158,24 @@ class OidcMiddleware:
             session = await self.get_session(request)
 
             if path in self.excluded_paths:
-                self.logger.debug("Path %s excluded", path)
+                self.logger.debug("Path excluded", path=path)
             elif self.excluded_re and self.excluded_re.match(path):
-                self.logger.debug("Path %s excluded via RE", path)
+                self.logger.debug("Path excluded via RE", path=path)
             else:
-                self.logger.debug("Path %s require authentication", path)
+                self.logger.debug("Path require authentication", path=path)
 
                 if session is None:
                     self.logger.info("No session found, redirect to login endpoint")
                     response = await self.login(request, next=path)
                     return await response(scope, receive, send)
 
-                self.logger.info("Found session %s for sub=%s email=%s", session.session_id, session.sub, session.email)
+                self.logger.info(
+                    "Found existing session",
+                    session_id=session.session_id,
+                    iss=session.iss,
+                    sub=session.sub,
+                    email=session.email,
+                )
 
             scope["state"]["session"] = session
 
@@ -189,10 +198,11 @@ class OidcMiddleware:
 
         claims: dict[str, str | int] = self.authenticate(code, self.callback_uri)
 
-        self.logger.info("Received claims %s", json.dumps(claims))
+        self.logger.info("Authenticated", claims=claims)
 
         session = Session(
             session_id=session_id,
+            iss=str(claims["iss"]),
             sub=str(claims["sub"]),
             name=str(claims["name"]),
             email=str(claims["email"]),
@@ -200,7 +210,7 @@ class OidcMiddleware:
         )
 
         if self.users and session.email not in self.users:
-            self.logger.warning("User %s forbiddden", session.email)
+            self.logger.warning("User forbidden", email=session.email)
             response = RedirectResponse(self.forbidden_path)
             response.set_cookie(self.cookie, "", expires=0)
             return response
@@ -213,12 +223,7 @@ class OidcMiddleware:
             exat=expires_at,
         )
 
-        self.logger.info(
-            "Created session %s with sub=%s email=%s",
-            session.session_id,
-            session.sub,
-            session.email,
-        )
+        self.logger.info("Created session", session_id=session.session_id)
 
         response = RedirectResponse(login_redirect_uri)
         response.set_cookie(
@@ -305,10 +310,10 @@ class OidcMiddleware:
 
     def to_dict_or_raise(self, response: httpx.Response) -> dict:
         if response.status_code != 200:
-            self.logger.error(f"Returned with status {response.status_code}.")
-            raise OpenIDConnectException(f"Status code {response.status_code} for {response.url}.")
+            self.logger.error(f"Returned with status {response.status_code}", status=response.status_code)
+            raise OpenIDConnectException(f"Status code {response.status_code} for {response.url}")
         try:
             return response.json()
         except JSONDecodeError as exc:
-            self.logger.error("Unable to decode json.")
-            raise OpenIDConnectException("Was not able to retrieve data from the response.") from exc
+            self.logger.error("Unable to decode JSON")
+            raise OpenIDConnectException("Was not able to retrieve data from the response") from exc

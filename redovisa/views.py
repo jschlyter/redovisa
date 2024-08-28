@@ -1,5 +1,4 @@
 import contextlib
-import logging
 import smtplib
 from datetime import date, datetime, timedelta, timezone
 from email.message import EmailMessage
@@ -9,10 +8,8 @@ from fastapi import APIRouter, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi_csrf_protect import CsrfProtect
 
-from .middleware import Session
 from .models import ExpenseReport
-
-logger = logging.getLogger(__name__)
+from .oidc import Session
 
 router = APIRouter()
 favicon_path = join(dirname(__file__), "static/favicon.ico")
@@ -25,6 +22,7 @@ async def favicon():
 
 @router.get("/")
 async def index(request: Request) -> HTMLResponse:
+    request.state.logger.info("Serving index")
     return request.app.templates.TemplateResponse(
         request=request,
         name="home.j2",
@@ -36,6 +34,7 @@ async def index(request: Request) -> HTMLResponse:
 
 @router.get("/forbidden")
 async def forbidden(request: Request) -> HTMLResponse:
+    request.state.logger.info("Forbidden")
     return request.app.templates.TemplateResponse(
         request=request,
         name="forbidden.j2",
@@ -48,9 +47,12 @@ async def forbidden(request: Request) -> HTMLResponse:
 @router.get("/expense")
 async def expense_form(request: Request) -> HTMLResponse:
     session: Session = request.state.session
-    logger.debug("Session: %s", session)
+
+    _logger = request.state.logger.bind(session_id=session.session_id)
+    _logger.info("Serve expense report form", session_id=session.session_id)
+
     recipient_account = request.cookies.get(request.app.settings.cookies.recipient_account, "")
-    logger.debug("Recipient account: %s", recipient_account)
+    _logger.debug(f"Recipient account: {recipient_account}")
 
     csrf_protect = CsrfProtect()
     csrf_token, csrf_signed_token = csrf_protect.generate_csrf_tokens()
@@ -76,6 +78,9 @@ async def submit_expense(request: Request, receipts: list[UploadFile]) -> HTMLRe
     session: Session = request.state.session
     settings = request.app.settings
 
+    _logger = request.state.logger.bind(session_id=session.session_id)
+    _logger.info("Process expense report")
+
     csrf_protect = CsrfProtect()
     await csrf_protect.validate_csrf(request)
 
@@ -95,11 +100,8 @@ async def submit_expense(request: Request, receipts: list[UploadFile]) -> HTMLRe
     msg.set_content(html_body, subtype="html")
 
     for receipt in receipts:
-        logger.debug(
-            "Processing file %s (%s) %d bytes",
-            receipt.filename,
-            receipt.content_type,
-            receipt.size,
+        _logger.debug(
+            f"Processing file {receipt.filename} ({receipt.content_type}) {receipt.size} bytes",
         )
 
         mime_maintype = "application"
@@ -117,7 +119,6 @@ async def submit_expense(request: Request, receipts: list[UploadFile]) -> HTMLRe
         )
 
     if settings.smtp.test:
-        logger.debug("Test email to %s cc %s bcc %s", msg["To"], msg["Cc"], msg["Bcc"])
         print(html_body)
     else:
         with smtplib.SMTP(settings.smtp.server, settings.smtp.port) as server:
@@ -127,7 +128,7 @@ async def submit_expense(request: Request, receipts: list[UploadFile]) -> HTMLRe
                 server.login(settings.smtp.username, settings.smtp.password)
             server.send_message(msg)
 
-    logger.info("Processed %s to %s cc %s bcc %s", expense_report.id, msg["To"], msg["Cc"], msg["Bcc"])
+    _logger.info(f"Processed {expense_report.id} to {msg['To']} cc {msg['Cc']} bcc {msg['Bcc']}")
 
     response = request.app.templates.TemplateResponse(
         request=request,

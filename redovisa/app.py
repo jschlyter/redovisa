@@ -2,4 +2,7 @@
 
 from redovisa.server import Redovisa
 
+from .logging import setup_logging
+
+setup_logging()
 app = Redovisa()
