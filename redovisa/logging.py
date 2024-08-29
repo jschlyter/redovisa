@@ -7,7 +7,7 @@ from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 
 
-def setup_logging(level=logging.INFO, log_json: bool = True):
+def setup_logging(level=logging.INFO, log_json: bool = False):
     processors = [
         structlog.stdlib.add_log_level,
         structlog.processors.TimeStamper(fmt="%Y-%m-%d %H:%M.%S"),
@@ -15,8 +15,6 @@ def setup_logging(level=logging.INFO, log_json: bool = True):
         structlog.processors.format_exc_info,
         structlog.processors.JSONRenderer(),
     ]
-
-    # structlog.stdlib.recreate_defaults()
 
     structlog.configure(
         processors=processors if log_json else None,
