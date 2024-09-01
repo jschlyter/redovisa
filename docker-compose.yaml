@@ -1,6 +1,6 @@
 services:
   redovisa:
-    image: redovisa:latest
+    image: ghcr.io/jschlyter/redovisa:latest
     build:
       context: .
   redis:
