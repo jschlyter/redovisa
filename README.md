@@ -10,6 +10,7 @@ _Redovisa_ är en webbapp för att på ett enkelt sätt kunna rapportera utlägg
 - En lista med epostadresser på godkända användare kan konfigureras
 - Webbsidor och epost styrs via mallar och variabler
 - Kvitton och underlag skickas via SMTP
+- Export till Google kalkylblad (Sheet)
 
 
 ## Konfiguration
