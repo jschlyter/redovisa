@@ -1,8 +1,8 @@
 import argparse
 import logging
 
-import pygsheets
 import fakeredis
+import pygsheets
 import redis
 import uvicorn
 from fastapi import FastAPI
@@ -12,12 +12,12 @@ from fastapi_csrf_protect import CsrfProtect
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from . import __version__
+from .export import GoogleSheetExpenseExporter
 from .logging import LoggingMiddleware, get_logger, setup_logging
 from .oidc import OidcMiddleware
 from .settings import Settings
 from .users import UsersCollection
 from .views import router as views_router
-from .export import GoogleSheetExpenseExporter
 
 
 class Redovisa(FastAPI):
@@ -49,7 +49,14 @@ class Redovisa(FastAPI):
 
         if self.settings.google:
             gc = pygsheets.authorize(service_account_file=self.settings.google.service_account_file)
-            self.exporters.append(GoogleSheetExpenseExporter(client=gc, sheet_key=self.settings.google.sheet_key))
+            self.exporters.append(
+                GoogleSheetExpenseExporter(
+                    client=gc,
+                    sheet_key=self.settings.google.sheet_key,
+                    worksheet_reports=self.settings.google.worksheet_reports,
+                    worksheet_items=self.settings.google.worksheet_items,
+                )
+            )
             self.logger.info("Google Sheet export configured")
 
         self.add_middleware(LoggingMiddleware)
