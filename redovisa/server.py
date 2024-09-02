@@ -1,6 +1,7 @@
 import argparse
 import logging
 
+import pygsheets
 import fakeredis
 import redis
 import uvicorn
@@ -16,6 +17,7 @@ from .oidc import OidcMiddleware
 from .settings import Settings
 from .users import UsersCollection
 from .views import router as views_router
+from .export import GoogleSheetExpenseExporter
 
 
 class Redovisa(FastAPI):
@@ -42,6 +44,13 @@ class Redovisa(FastAPI):
             if self.settings.redis
             else fakeredis.FakeRedis()
         )
+
+        self.exporters = []
+
+        if self.settings.google:
+            gc = pygsheets.authorize(service_account_file=self.settings.google.service_account_file)
+            self.exporters.append(GoogleSheetExpenseExporter(client=gc, sheet_key=self.settings.google.sheet_key))
+            self.logger.info("Google Sheet export configured")
 
         self.add_middleware(LoggingMiddleware)
         self.add_middleware(ProxyHeadersMiddleware, trusted_hosts=self.settings.http.trusted_hosts)

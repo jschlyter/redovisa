@@ -101,7 +101,8 @@ async def submit_expense(request: Request, receipts: list[UploadFile]) -> HTMLRe
 
     for receipt in receipts:
         _logger.debug(
-            f"Processing file {receipt.filename} ({receipt.content_type}) {receipt.size} bytes",
+            f"Processing file {receipt.filename} ({receipt.content_type}) {
+                receipt.size} bytes",
         )
 
         mime_maintype = "application"
@@ -128,7 +129,11 @@ async def submit_expense(request: Request, receipts: list[UploadFile]) -> HTMLRe
                 server.login(settings.smtp.username, settings.smtp.password)
             server.send_message(msg)
 
-    _logger.info(f"Processed {expense_report.id} to {msg['To']} cc {msg['Cc']} bcc {msg['Bcc']}")
+    for exporter in request.app.exporters:
+        exporter.export(expense_report)
+
+    _logger.info(f"Processed {expense_report.id} to {
+                 msg['To']} cc {msg['Cc']} bcc {msg['Bcc']}")
 
     response = request.app.templates.TemplateResponse(
         request=request,

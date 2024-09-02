@@ -71,6 +71,11 @@ class HttpSettings(BaseModel):
     trusted_hosts: list[str] | str | None = Field(default="127.0.0.1", description="List of trusted HTTP proxies")
 
 
+class GoogleSettings(BaseModel):
+    service_account_file: FilePath
+    sheet_key: str
+
+
 class Settings(BaseSettings):
     smtp: SmtpSettings
     oidc: OidcSettings
@@ -81,6 +86,7 @@ class Settings(BaseSettings):
     csrf: CsrfSettings = CsrfSettings()
     users: UsersSettings = UsersSettings()
     http: HttpSettings = HttpSettings()
+    google: GoogleSettings | None = None
 
     model_config = SettingsConfigDict(toml_file="redovisa.toml")
 
