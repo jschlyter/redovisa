@@ -44,3 +44,7 @@ trusted_hosts = "127.0.0.1"
 [users]
 file = "users.json"
 ttl = 300
+
+#[google]
+#service_account_file = "redovisa-test-8f9ece3f93b6.json"
+#sheet_key = "XXX"
