@@ -1,6 +1,6 @@
 from abc import abstractmethod
 
-import pygsheets
+import pygsheets.client
 
 from .logging import get_logger
 from .models import ExpenseReport
