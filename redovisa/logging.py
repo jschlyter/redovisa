@@ -5,6 +5,7 @@ import uuid
 import structlog
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
+from structlog import BoundLogger
 
 
 def setup_logging(level=logging.INFO, log_json: bool = False):
@@ -25,7 +26,7 @@ def setup_logging(level=logging.INFO, log_json: bool = False):
     get_logger().debug("Logging configured")
 
 
-def get_logger():
+def get_logger() -> BoundLogger:
     return structlog.get_logger()
 
 

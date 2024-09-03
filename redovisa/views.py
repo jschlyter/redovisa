@@ -1,13 +1,11 @@
-import contextlib
-import smtplib
 from datetime import date, datetime, timedelta, timezone
-from email.message import EmailMessage
 from os.path import dirname, join
 
 from fastapi import APIRouter, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi_csrf_protect import CsrfProtect
 
+from .logging import BoundLogger
 from .models import ExpenseReport
 from .oidc import Session
 
@@ -48,7 +46,7 @@ async def forbidden(request: Request) -> HTMLResponse:
 async def expense_form(request: Request) -> HTMLResponse:
     session: Session = request.state.session
 
-    _logger = request.state.logger.bind(session_id=session.session_id)
+    _logger: BoundLogger = request.state.logger.bind(session_id=session.session_id)
     _logger.info("Serve expense report form", session_id=session.session_id)
 
     recipient_account = request.cookies.get(request.app.settings.cookies.recipient_account, "")
@@ -76,9 +74,8 @@ async def expense_form(request: Request) -> HTMLResponse:
 @router.post("/expense")
 async def submit_expense(request: Request, receipts: list[UploadFile]) -> HTMLResponse:
     session: Session = request.state.session
-    settings = request.app.settings
 
-    _logger = request.state.logger.bind(session_id=session.session_id)
+    _logger: BoundLogger = request.state.logger.bind(session_id=session.session_id)
     _logger.info("Process expense report")
 
     csrf_protect = CsrfProtect()
@@ -87,53 +84,9 @@ async def submit_expense(request: Request, receipts: list[UploadFile]) -> HTMLRe
     form = await request.form()
     expense_report = ExpenseReport.from_form(form, session, request.app.settings.context.get("accounts", {}))
 
-    template = request.app.templates.get_template(name="mail.j2")
-    html_body = template.render(expense_report=expense_report, receipts=receipts, **request.app.settings.context)
-
-    msg = EmailMessage()
-    msg["Subject"] = settings.smtp.subject
-    msg["From"] = settings.smtp.sender
-    msg["To"] = settings.smtp.recipients
-    msg["Cc"] = settings.smtp.recipients_cc | set([session.email])
-    msg["Bcc"] = settings.smtp.recipients_bcc
-    msg["Reply-To"] = session.email
-    msg.set_content(html_body, subtype="html")
-
-    for receipt in receipts:
-        _logger.debug(
-            f"Processing file {receipt.filename} ({receipt.content_type}) {
-                receipt.size} bytes",
-        )
-
-        mime_maintype = "application"
-        mime_subtype = "octet-stream"
-
-        if content_type := receipt.headers.get("content-type"):
-            with contextlib.suppress(ValueError):
-                mime_maintype, mime_subtype = content_type.split("/")
-
-        msg.add_attachment(
-            await receipt.read(),
-            maintype=mime_maintype,
-            subtype=mime_subtype,
-            filename=receipt.filename,
-        )
-
-    if settings.smtp.test:
-        print(html_body)
-    else:
-        with smtplib.SMTP(settings.smtp.server, settings.smtp.port) as server:
-            if settings.smtp.starttls:
-                server.starttls()
-            if settings.smtp.username and settings.smtp.password:
-                server.login(settings.smtp.username, settings.smtp.password)
-            server.send_message(msg)
-
+    _logger.info("Exporting expense eport", expense_report_id=expense_report.id)
     for exporter in request.app.exporters:
-        exporter.export(expense_report)
-
-    _logger.info(f"Processed {expense_report.id} to {
-                 msg['To']} cc {msg['Cc']} bcc {msg['Bcc']}")
+        await exporter.export(expense_report=expense_report, request=request, receipts=receipts, logger=_logger)
 
     response = request.app.templates.TemplateResponse(
         request=request,
