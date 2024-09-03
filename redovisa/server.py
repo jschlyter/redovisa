@@ -12,7 +12,7 @@ from fastapi_csrf_protect import CsrfProtect
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from . import __version__
-from .export import GoogleSheetExpenseExporter
+from .export import GoogleSheetExpenseExporter, SmtpExpenseExporter
 from .logging import LoggingMiddleware, get_logger, setup_logging
 from .oidc import OidcMiddleware
 from .settings import Settings
@@ -46,6 +46,11 @@ class Redovisa(FastAPI):
         )
 
         self.exporters = []
+
+        if self.settings.smtp:
+            self.exporters.append(
+                SmtpExpenseExporter(settings=self.settings.smtp, template=self.templates.get_template(name="mail.j2"))
+            )
 
         if self.settings.google:
             gc = pygsheets.authorize(service_account_file=self.settings.google.service_account_file)

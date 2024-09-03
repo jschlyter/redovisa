@@ -79,7 +79,6 @@ class GoogleSettings(BaseModel):
 
 
 class Settings(BaseSettings):
-    smtp: SmtpSettings
     oidc: OidcSettings
     redis: RedisSettings | None = None
     paths: PathSettings = PathSettings()
@@ -88,6 +87,8 @@ class Settings(BaseSettings):
     csrf: CsrfSettings = CsrfSettings()
     users: UsersSettings = UsersSettings()
     http: HttpSettings = HttpSettings()
+
+    smtp: SmtpSettings | None = None
     google: GoogleSettings | None = None
 
     model_config = SettingsConfigDict(toml_file="redovisa.toml")

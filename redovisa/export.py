@@ -1,15 +1,97 @@
+import contextlib
+import smtplib
 from abc import abstractmethod
+from email.message import EmailMessage
 
 import pygsheets.client
+from fastapi import Request, UploadFile
+from jinja2 import Template
 
-from .logging import get_logger
+from .logging import BoundLogger, get_logger
 from .models import ExpenseReport
+from .settings import SmtpSettings
 
 
 class ExpenseExporter:
+    def __init__(self) -> None:
+        self.logger = get_logger()
+
     @abstractmethod
-    def export(self, report: ExpenseReport):
+    def export(
+        self,
+        expense_report: ExpenseReport,
+        request: Request,
+        receipts: list[UploadFile] | None = None,
+        logger: BoundLogger | None = None,
+    ) -> None:
         pass
+
+
+class SmtpExpenseExporter(ExpenseExporter):
+    def __init__(
+        self,
+        settings: SmtpSettings,
+        template: Template,
+    ) -> None:
+        super().__init__()
+
+        self.template = template
+        self.settings = settings
+
+    async def export(
+        self,
+        expense_report: ExpenseReport,
+        request: Request,
+        receipts: list[UploadFile] | None = None,
+        logger: BoundLogger | None = None,
+    ) -> None:
+        logger = logger or self.logger
+
+        html_body = self.template.render(
+            expense_report=expense_report, receipts=receipts, **request.app.settings.context
+        )
+
+        msg = EmailMessage()
+        msg["Subject"] = self.settings.subject
+        msg["From"] = self.settings.sender
+        msg["To"] = self.settings.recipients
+        msg["Cc"] = self.settings.recipients_cc | set([expense_report.recipient.email])
+        msg["Bcc"] = self.settings.recipients_bcc
+        msg["Reply-To"] = expense_report.recipient.email
+        msg.set_content(html_body, subtype="html")
+
+        for receipt in receipts or []:
+            mime_maintype = "application"
+            mime_subtype = "octet-stream"
+
+            if content_type := receipt.headers.get("content-type"):
+                with contextlib.suppress(ValueError):
+                    mime_maintype, mime_subtype = content_type.split("/")
+
+            msg.add_attachment(
+                await receipt.read(),
+                maintype=mime_maintype,
+                subtype=mime_subtype,
+                filename=receipt.filename,
+            )
+
+        if self.settings.test:
+            print(html_body)
+        else:
+            with smtplib.SMTP(self.settings.server, self.settings.port) as server:
+                if self.settings.starttls:
+                    server.starttls()
+                if self.settings.username and self.settings.password:
+                    server.login(self.settings.username, self.settings.password)
+                server.send_message(msg)
+
+        logger.info(
+            "Expense report sent via SMTP",
+            expense_report_id=expense_report.id,
+            smtp_to=msg["To"],
+            smtp_cc=msg["Cc"],
+            smtp_bcc=msg["Bcc"],
+        )
 
 
 class GoogleSheetExpenseExporter(ExpenseExporter):
@@ -20,7 +102,8 @@ class GoogleSheetExpenseExporter(ExpenseExporter):
         worksheet_reports: str | int,
         worksheet_items: str | int,
     ) -> None:
-        self.logger = get_logger()
+        super().__init__()
+
         self.sheet_key = sheet_key
         sheet = client.open_by_key(sheet_key)
 
@@ -42,22 +125,30 @@ class GoogleSheetExpenseExporter(ExpenseExporter):
             worksheet_title=self.wks_items.title,
         )
 
-    def export(self, report: ExpenseReport):
+    async def export(
+        self,
+        expense_report: ExpenseReport,
+        request: Request,
+        receipts: list[UploadFile] | None = None,
+        logger: BoundLogger | None = None,
+    ) -> None:
+        logger = logger or self.logger
+
         self.wks_reports.append_table(
             values=[
-                report.timestamp.strftime("%Y-%m-%d %H.%M.%S"),
-                report.id,
-                report.date.strftime("%Y-%m-%d"),
-                report.recipient.name,
-                report.recipient.email,
-                report.total_amount,
+                expense_report.timestamp.strftime("%Y-%m-%d %H.%M.%S"),
+                expense_report.id,
+                expense_report.date.strftime("%Y-%m-%d"),
+                expense_report.recipient.name,
+                expense_report.recipient.email,
+                expense_report.total_amount,
             ]
         )
 
-        for item in report.items:
+        for item in expense_report.items:
             self.wks_items.append_table(
                 values=[
-                    report.id,
+                    expense_report.id,
                     item.account,
                     item.account_name,
                     item.description,
@@ -65,4 +156,6 @@ class GoogleSheetExpenseExporter(ExpenseExporter):
                 ]
             )
 
-        self.logger.info("Expense report exported to Google Sheet", sheet_key=self.sheet_key)
+        logger.info(
+            "Expense report exported to Google Sheet", expense_report_id=expense_report.id, sheet_key=self.sheet_key
+        )
