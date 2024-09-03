@@ -33,13 +33,11 @@ class GoogleSheetExpenseExporter(ExpenseExporter):
 
         self.logger.debug(
             "Reports worksheet configured",
-            worksheet_id=self.wks_reports.id,
             worksheet_index=self.wks_reports.index,
             worksheet_title=self.wks_reports.title,
         )
         self.logger.debug(
             "Items worksheet configured",
-            worksheet_id=self.wks_items.id,
             worksheet_index=self.wks_items.index,
             worksheet_title=self.wks_items.title,
         )
