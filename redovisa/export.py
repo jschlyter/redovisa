@@ -17,15 +17,32 @@ class GoogleSheetExpenseExporter(ExpenseExporter):
         self,
         client: pygsheets.client.Client,
         sheet_key: str,
-        worksheet_reports: str,
-        worksheet_items: str,
+        worksheet_reports: str | int,
+        worksheet_items: str | int,
     ) -> None:
-        self.sheet_key = sheet_key
-        gc = client
-        sheet = gc.open_by_key(sheet_key)
-        self.wks_reports = sheet.worksheet_by_title(worksheet_reports)
-        self.wks_items = sheet.worksheet_by_title(worksheet_items)
         self.logger = get_logger()
+        self.sheet_key = sheet_key
+        sheet = client.open_by_key(sheet_key)
+
+        self.wks_reports = sheet.worksheet(
+            property="index" if isinstance(worksheet_reports, int) else "title", value=worksheet_reports
+        )
+        self.wks_items = sheet.worksheet(
+            property="index" if isinstance(worksheet_items, int) else "title", value=worksheet_items
+        )
+
+        self.logger.debug(
+            "Reports worksheet configured",
+            worksheet_id=self.wks_reports.id,
+            worksheet_index=self.wks_reports.index,
+            worksheet_title=self.wks_reports.title,
+        )
+        self.logger.debug(
+            "Items worksheet configured",
+            worksheet_id=self.wks_items.id,
+            worksheet_index=self.wks_items.index,
+            worksheet_title=self.wks_items.title,
+        )
 
     def export(self, report: ExpenseReport):
         self.wks_reports.append_table(

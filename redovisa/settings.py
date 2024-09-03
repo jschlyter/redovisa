@@ -74,8 +74,8 @@ class HttpSettings(BaseModel):
 class GoogleSettings(BaseModel):
     service_account_file: FilePath
     sheet_key: str
-    worksheet_reports: str
-    worksheet_items: str
+    worksheet_reports: str | int
+    worksheet_items: str | int
 
 
 class Settings(BaseSettings):
