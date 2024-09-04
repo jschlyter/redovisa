@@ -1,14 +1,9 @@
+[http]
+trusted_hosts = "127.0.0.1"
 
-[smtp]
-test = true
-server = "mail.example.com"
-port = 25
-starttls = true
-sender = "redovisa@example.com"
-recipients = ["redovisa@example.com"]
-recipients_cc = ["cc@example.com"]
-recipients_bcc = ["bcc@example.com"]
-subject = "Redovisning av utlägg"
+#[paths]
+#templates = "redovisa/templates/"
+#static = "redovisa/static/"
 
 [oidc]
 base_uri = "http://127.0.0.1:8080/"
@@ -16,9 +11,9 @@ base_uri = "http://127.0.0.1:8080/"
 client_id = "REDACTED"
 client_secret = "REDACTED"
 
-#[paths]
-#templates = "redovisa/templates/"
-#static = "redovisa/static/"
+[users]
+file = "users.json"
+ttl = 300
 
 [context]
 organisation = "Organisation (TEST)"
@@ -38,12 +33,16 @@ sso_provider_img = "https://cdn.scouterna.net/scoutid/login.png"
 4611 = "Kostnader sommarläger"
 0000 = "Övrigt"
 
-[http]
-trusted_hosts = "127.0.0.1"
-
-[users]
-file = "users.json"
-ttl = 300
+[smtp]
+test = true
+server = "mail.example.com"
+port = 25
+starttls = true
+sender = "redovisa@example.com"
+recipients = ["redovisa@example.com"]
+recipients_cc = ["cc@example.com"]
+recipients_bcc = ["bcc@example.com"]
+subject = "Redovisning av utlägg"
 
 #[google]
 #service_account_file = "redovisa-test-8f9ece3f93b6.json"
