@@ -80,6 +80,7 @@ class Redovisa(FastAPI):
             excluded_paths=["/", "/favicon.ico", "/forbidden"],
             excluded_re=r"^/static/",
             login_redirect_uri="/",
+            scope=self.settings.oidc.scope,
             redis_client=self.redis_client,
             users=users,
         )
