@@ -29,6 +29,8 @@ from uvicorn._types import (
 
 from .logging import get_logger
 
+DEFAULT_SCOPE = ["openid", "email", "profile"]
+
 
 class Session(BaseModel):
     session_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -73,7 +75,7 @@ class OidcMiddleware:
         client_id: str,
         client_secret: str,
         base_uri: str,
-        scope: str = "openid email profile",
+        scope: list[str] | None = None,
         cookie: str = "session_id",
         session_ttl: int = 3600,
         auth_ttl: int = 300,
@@ -95,7 +97,7 @@ class OidcMiddleware:
         self.client_id = client_id
         self.client_secret = client_secret
         self.base_uri = base_uri
-        self.scope = scope
+        self.scope = scope or DEFAULT_SCOPE
         self.cookie = cookie
         self.session_ttl = session_ttl
         self.auth_ttl = auth_ttl
@@ -276,7 +278,7 @@ class OidcMiddleware:
         params = urllib.parse.urlencode(
             {
                 "response_type": "code",
-                "scope": self.scope,
+                "scope": " ".join(self.scope),
                 "client_id": self.client_id,
                 "redirect_uri": callback_uri,
                 **kwargs,
