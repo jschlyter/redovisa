@@ -270,6 +270,7 @@ class OidcMiddleware:
 
     def authenticate(self, code: str, callback_uri: str, get_user_info: bool = False) -> dict:
         auth_token = self.get_auth_token(code, callback_uri)
+        self.logger.debug("Received auth_token %s", auth_token)
         if get_user_info:
             access_token = auth_token["access_token"]
             return self.get_user_info(access_token=access_token)
@@ -304,6 +305,7 @@ class OidcMiddleware:
             "code": code,
             "redirect_uri": callback_uri,
         }
+        self.logger.debug("Get auth_token", token_endpoint=self.configuration.token_endpoint)
         response = self.session.post(self.configuration.token_endpoint, data=data, headers=headers)
         return self.to_dict_or_raise(response)
 
