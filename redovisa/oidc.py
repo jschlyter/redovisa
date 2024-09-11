@@ -75,7 +75,7 @@ class OidcMiddleware:
         client_id: str,
         client_secret: str,
         base_uri: str,
-        scope: list[str] | None = None,
+        scopes: list[str] | None = None,
         cookie: str = "session_id",
         session_ttl: int = 3600,
         auth_ttl: int = 300,
@@ -97,7 +97,7 @@ class OidcMiddleware:
         self.client_id = client_id
         self.client_secret = client_secret
         self.base_uri = base_uri
-        self.scope = scope or DEFAULT_SCOPE
+        self.scopes = scopes or DEFAULT_SCOPE
         self.cookie = cookie
         self.session_ttl = session_ttl
         self.auth_ttl = auth_ttl
@@ -167,7 +167,7 @@ class OidcMiddleware:
                 self.logger.debug("Path require authentication", path=path)
 
                 if session is None:
-                    self.logger.info("No session found, redirect to login endpoint")
+                    self.logger.info("No session found, redirect to OP login endpoint")
                     response = await self.login(request, next=path)
                     return await response(scope, receive, send)
 
@@ -244,7 +244,11 @@ class OidcMiddleware:
         state_payload = {"next": next, "session_id": session_id}
         state = b64e(json.dumps(state_payload).encode()).decode()
 
-        response = RedirectResponse(self.get_auth_redirect_uri(self.callback_uri, state=state))
+        self.logger.debug("Prepare redirect to OP", redirect_uri=self.callback_uri, state_payload=state_payload)
+        redirect_url = self.get_auth_redirect_uri(self.callback_uri, state=state)
+        self.logger.debug("Redirect to OP", redirect_url=redirect_url)
+
+        response = RedirectResponse(redirect_url)
 
         response.set_cookie(key=self.cookie, value=session_id, max_age=self.auth_ttl)
 
@@ -278,13 +282,12 @@ class OidcMiddleware:
         params = urllib.parse.urlencode(
             {
                 "response_type": "code",
-                "scope": " ".join(self.scope),
+                "scope": " ".join(self.scopes),
                 "client_id": self.client_id,
                 "redirect_uri": callback_uri,
                 **kwargs,
             }
         )
-
         return f"{self.configuration.authorization_endpoint}?{params}"
 
     def get_auth_token(self, code: str, callback_uri: str) -> dict:

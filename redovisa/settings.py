@@ -34,7 +34,7 @@ class OidcSettings(BaseModel):
     base_uri: HttpUrl = Field(description="Base URI for the app itself")
     auth_ttl: int = Field(default=300, description="Authentication timeout")
     session_ttl: int = Field(default=86400, description="Default session timeout (if not set by OIDC)")
-    scope: list[str] = Field(default=["openid", "email", "profile"])
+    scopes: list[str] = Field(default=["openid", "email", "profile"])
 
 
 class RedisSettings(BaseModel):
