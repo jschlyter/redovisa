@@ -202,11 +202,16 @@ class OidcMiddleware:
 
         self.logger.info("Authenticated", claims=claims)
 
+        if "given_name" in claims and "family_name" in claims:
+            name = f"{claims['given_name']} {claims['family_name']}"
+        else:
+            name = str(claims.get("name", ""))
+
         session = Session(
             session_id=session_id,
             iss=str(claims["iss"]),
             sub=str(claims["sub"]),
-            name=str(claims["name"]),
+            name=name,
             email=str(claims["email"]),
             claims=claims,
         )
@@ -246,7 +251,7 @@ class OidcMiddleware:
 
         self.logger.debug("Prepare redirect to OP", redirect_uri=self.callback_uri, state_payload=state_payload)
         redirect_url = self.get_auth_redirect_uri(self.callback_uri, state=state)
-        self.logger.debug("Redirect to OP", redirect_url=redirect_url)
+        self.logger.debug("Redirect to OP", url=redirect_url)
 
         response = RedirectResponse(redirect_url)
 
@@ -269,13 +274,13 @@ class OidcMiddleware:
                 return Session.model_validate_json(session_data.decode())
 
     def authenticate(self, code: str, callback_uri: str, get_user_info: bool = False) -> dict:
-        auth_token = self.get_auth_token(code, callback_uri)
-        self.logger.debug("Received auth_token %s", auth_token)
+        token = self.get_token(code, callback_uri)
+        self.logger.debug("Received token %s", token)
         if get_user_info:
-            access_token = auth_token["access_token"]
+            access_token = token["access_token"]
             return self.get_user_info(access_token=access_token)
         else:
-            id_token = auth_token["id_token"]
+            id_token = token["id_token"]
             jwt = self.jwt.unpack(id_token)
             return dict(jwt)
 
@@ -291,7 +296,7 @@ class OidcMiddleware:
         )
         return f"{self.configuration.authorization_endpoint}?{params}"
 
-    def get_auth_token(self, code: str, callback_uri: str) -> dict:
+    def get_token(self, code: str, callback_uri: str) -> dict:
         authstr = (
             "Basic "
             + b64encode(
@@ -305,7 +310,7 @@ class OidcMiddleware:
             "code": code,
             "redirect_uri": callback_uri,
         }
-        self.logger.debug("Get auth_token", token_endpoint=self.configuration.token_endpoint)
+        self.logger.debug("Get token", token_endpoint=self.configuration.token_endpoint)
         response = self.session.post(self.configuration.token_endpoint, data=data, headers=headers)
         return self.to_dict_or_raise(response)
 

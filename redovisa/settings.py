@@ -83,7 +83,7 @@ class Settings(BaseSettings):
     oidc: OidcSettings
     redis: RedisSettings | None = None
     paths: PathSettings = PathSettings()
-    context: dict[str, str | dict[str, str]] = Field(default={})
+    context: dict[str, str | dict[str, str] | bool] = Field(default={})
     cookies: CookieSettings = CookieSettings()
     csrf: CsrfSettings = CsrfSettings()
     users: UsersSettings = UsersSettings()

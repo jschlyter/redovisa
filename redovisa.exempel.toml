@@ -6,8 +6,8 @@ trusted_hosts = "127.0.0.1"
 #static = "redovisa/static/"
 
 [oidc]
-base_uri = "http://127.0.0.1:8080/"
-#configuration_uri = "https://scoutid.se/simplesaml/module.php/oidc/openid-configuration.php"
+base_uri = "http://localhost:8080"
+configuration_uri = "https://accounts.google.com/.well-known/openid-configuration"
 client_id = "REDACTED"
 client_secret = "REDACTED"
 
@@ -19,9 +19,10 @@ ttl = 300
 organisation = "Organisation (TEST)"
 name = "Förnamn Eftermiddag"
 email = "redovisa@example.com"
-sso_provider = "ScoutID"
-sso_provider_uri = "https://scoutid.se/"
-sso_provider_img = "https://cdn.scouterna.net/scoutid/login.png"
+sso_provider = "Google"
+sso_provider_google = true
+#sso_provider_uri = "https://scoutid.se/"
+#sso_provider_img = "https://cdn.scouterna.net/scoutid/login.png"
 
 [context.accounts]
 4210 = "Grenkostnad Bäver"
