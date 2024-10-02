@@ -357,13 +357,13 @@ idna = ">=2.0.0"
 
 [[package]]
 name = "fakeredis"
-version = "2.25.0"
+version = "2.25.1"
 description = "Python implementation of redis API, can be used for testing purposes."
 optional = false
 python-versions = "<4.0,>=3.7"
 files = [
-    {file = "fakeredis-2.25.0-py3-none-any.whl", hash = "sha256:70271d98ec96324eda6c2c9fdb74f858d0c3e929d15ed4972c8da75f219665be"},
-    {file = "fakeredis-2.25.0.tar.gz", hash = "sha256:d1f972b8d7ac14d3e93ab3673d4a628d7836a7abb9cf2d3c10fb0b08258f3b85"},
+    {file = "fakeredis-2.25.1-py3-none-any.whl", hash = "sha256:d08dcbaceae0804db4644fa634106e3c42d76fe4d11aea2949eda768df0c6450"},
+    {file = "fakeredis-2.25.1.tar.gz", hash = "sha256:e9e73bacf412d1d942ee7f80525dc188182158e82d41be57eb9c4e71f7474ac8"},
 ]
 
 [package.dependencies]
@@ -422,13 +422,13 @@ standard = ["uvicorn[standard] (>=0.15.0)"]
 
 [[package]]
 name = "fastapi-csrf-protect"
-version = "0.3.5"
+version = "0.3.6"
 description = "Stateless implementation of Cross-Site Request Forgery (XSRF) Protection by using Double Submit Cookie mitigation pattern"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "fastapi_csrf_protect-0.3.5-py3-none-any.whl", hash = "sha256:19e44dfe00479b803fc16522d52be70ca33154d711cdf841ba0f370f3fca4b53"},
-    {file = "fastapi_csrf_protect-0.3.5.tar.gz", hash = "sha256:26ffbbdd137a4e3de0372687edc3cfc1979382b0f61811a5539ffa004be20136"},
+    {file = "fastapi_csrf_protect-0.3.6-py3-none-any.whl", hash = "sha256:a0de413d939a7192a210d8d1729468e14e6519d97e202e2cd5614e4a48ff9f25"},
+    {file = "fastapi_csrf_protect-0.3.6.tar.gz", hash = "sha256:fb9a6e304f5fe42ba4f2c0e4967bd21a2693c4aa89d95cf6f04b2af0287cdb01"},
 ]
 
 [package.dependencies]
@@ -671,13 +671,13 @@ files = [
 
 [[package]]
 name = "httpcore"
-version = "1.0.5"
+version = "1.0.6"
 description = "A minimal low-level HTTP client."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "httpcore-1.0.5-py3-none-any.whl", hash = "sha256:421f18bac248b25d310f3cacd198d55b8e6125c107797b609ff9b7a6ba7991b5"},
-    {file = "httpcore-1.0.5.tar.gz", hash = "sha256:34a38e2f9291467ee3b44e89dd52615370e152954ba21721378a87b2960f7a61"},
+    {file = "httpcore-1.0.6-py3-none-any.whl", hash = "sha256:27b59625743b85577a8c0e10e55b50b5368a4f2cfe8cc7bcfa9cf00829c2682f"},
+    {file = "httpcore-1.0.6.tar.gz", hash = "sha256:73f6dbd6eb8c21bbf7ef8efad555481853f5f6acdeaff1edb0694289269ee17f"},
 ]
 
 [package.dependencies]
@@ -688,7 +688,7 @@ h11 = ">=0.13,<0.15"
 asyncio = ["anyio (>=4.0,<5.0)"]
 http2 = ["h2 (>=3,<5)"]
 socks = ["socksio (==1.*)"]
-trio = ["trio (>=0.22.0,<0.26.0)"]
+trio = ["trio (>=0.22.0,<1.0)"]
 
 [[package]]
 name = "httplib2"
@@ -1351,13 +1351,13 @@ rsa = ["oauthlib[signedtoken] (>=3.0.0)"]
 
 [[package]]
 name = "rich"
-version = "13.8.1"
+version = "13.9.1"
 description = "Render rich text, tables, progress bars, syntax highlighting, markdown and more to the terminal"
 optional = false
-python-versions = ">=3.7.0"
+python-versions = ">=3.8.0"
 files = [
-    {file = "rich-13.8.1-py3-none-any.whl", hash = "sha256:1760a3c0848469b97b558fc61c85233e3dafb69c7a071b4d60c38099d3cd4c06"},
-    {file = "rich-13.8.1.tar.gz", hash = "sha256:8260cda28e3db6bf04d2d1ef4dbc03ba80a824c88b0e7668a0f23126a424844a"},
+    {file = "rich-13.9.1-py3-none-any.whl", hash = "sha256:b340e739f30aa58921dc477b8adaa9ecdb7cecc217be01d93730ee1bc8aa83be"},
+    {file = "rich-13.9.1.tar.gz", hash = "sha256:097cffdf85db1babe30cc7deba5ab3a29e1b9885047dab24c57e9a7f8a9c1466"},
 ]
 
 [package.dependencies]
