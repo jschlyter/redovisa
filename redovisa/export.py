@@ -82,15 +82,17 @@ class SmtpExpenseExporter(ExpenseExporter):
                 filename=receipt.filename,
             )
 
-            if mime_maintype == "image" and mime_maintype in ["png", "jpeg"]:
+            if mime_maintype == "image" and mime_subtype in ["png", "jpeg"]:
                 pdf_output.add_image(receipt_data)
             elif mime_maintype == "application" and mime_subtype == "pdf":
                 pdf_output.add_pdf(receipt_data)
 
         expense_report_pdf = pdf_output.get_pdf()
-
         msg.add_attachment(
-            expense_report_pdf, maintype="application", subtype="pdf", filename=f"{expense_report.id}.pdf"
+            expense_report_pdf,
+            maintype="application",
+            subtype="pdf",
+            filename=f"{expense_report.date}.{expense_report.id}.pdf",
         )
 
         if self.settings.test:

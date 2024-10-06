@@ -1,38 +1,36 @@
 from io import BytesIO
-from tempfile import NamedTemporaryFile
 
-from fpdf import FPDF, HTMLMixin
 from PyPDF2 import PdfWriter
-
-
-class MyFPDF(FPDF, HTMLMixin):
-    pass
+from reportlab.lib.utils import ImageReader
+from reportlab.pdfgen.canvas import Canvas
+from xhtml2pdf import pisa
 
 
 class PdfRenderer:
     def __init__(self) -> None:
-        self.fpdf = MyFPDF(format="A4")
         self.pdfs = []
 
     def add_html(self, html: str) -> None:
-        self.fpdf.add_page()
-        self.fpdf.write_html(html)
+        with BytesIO() as fp:
+            pisa.CreatePDF(html, dest=fp)
+            fp.seek(0)
+            self.pdfs.append(fp.read())
 
-    def add_image(self, image_bytes: bytes, image_type: str, suffix: str | None = None) -> None:
-        with NamedTemporaryFile(delete_on_close=False, suffix=suffix) as fp:
-            fp.write(image_bytes)
-            fp.close()
-            self.fpdf.add_page()
-            self.fpdf.image(fp.name, type=image_type)
+    def add_image(self, image_bytes: bytes) -> None:
+        with BytesIO(image_bytes) as fp:
+            image = ImageReader(fp)
+            with BytesIO() as fp:
+                canvas = Canvas(fp)
+                canvas.drawImage(image, 0, 0)
+                canvas.save()
+                fp.seek(0)
+                self.pdfs.append(fp.read())
 
     def add_pdf(self, pdf_bytes: bytes) -> None:
         self.pdfs.append(pdf_bytes)
 
     def get_pdf(self) -> bytes:
         pdf_output = PdfWriter()
-
-        cover_pdf_bytes = self.fpdf.output(dest="S").encode()
-        pdf_output.append(fileobj=BytesIO(cover_pdf_bytes))
 
         for pdf_bytes in self.pdfs:
             pdf_output.append(fileobj=BytesIO(pdf_bytes))

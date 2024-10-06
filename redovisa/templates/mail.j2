@@ -1,3 +1,18 @@
+<html>
+<head>
+<style>
+th {
+    font-family: Franklin Gothic Medium,Franklin Gothic,ITC Franklin Gothic,Arial,sans-serif;
+    text-align: left;
+}
+
+th.amount, td.amount {
+    text-align: right;
+}
+</style>
+</head>
+<body>
+
 <h1>Utlägg från {{ expense_report.recipient.name }}</h1>
 
 <p>Referensnummer {{ expense_report.id }}</p>
@@ -35,7 +50,7 @@
     <th>Konto</th>
     <th>Namn</th>
     <th>Beskrivning</th>
-    <th>Belopp</th>
+    <th class="amount">Belopp</th>
   </tr>
 
 {% for item in expense_report.items %}
@@ -43,8 +58,11 @@
     <td>{{ item.account }}</td>
     <td>{{ item.account_name }}</td>
     <td>{{ item.description }}</td>
-    <td>{{ "%0.2f" | format(item.amount | float) }} kr</td>
+    <td  class="amount">{{ "%0.2f" | format(item.amount | float) }} kr</td>
   </tr>
 {% endfor %}
 
 </table></p>
+
+</body>
+</html>
