@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "redovisa"
-version = "0.2.0"
+version = "0.3.0"
 description = ""
 authors = ["Jakob Schlyter <jakob@schlyter.se>"]
 readme = "README.md"
@@ -23,9 +23,12 @@ fakeredis = "^2.23.5"
 fastapi-csrf-protect = "^0.3.4"
 structlog = "^24.4.0"
 pygsheets = "^2.0.6"
+pypdf2 = "^3.0.1"
+xhtml2pdf = {extras = ["pycairo"], version = "^0.2.16"}
 
 [tool.poetry.group.dev.dependencies]
 ruff = ">=0.6.0"
+pytest = "^8.3.3"
 
 [build-system]
 requires = ["poetry-core"]

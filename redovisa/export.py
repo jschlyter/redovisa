@@ -9,6 +9,7 @@ from jinja2 import Template
 
 from .logging import BoundLogger, get_logger
 from .models import ExpenseReport
+from .pdf import PdfRenderer
 from .settings import SmtpSettings
 
 
@@ -47,6 +48,8 @@ class SmtpExpenseExporter(ExpenseExporter):
     ) -> None:
         logger = logger or self.logger
 
+        pdf_output = PdfRenderer()
+
         html_body = self.template.render(
             expense_report=expense_report, receipts=receipts, **request.app.settings.context
         )
@@ -60,6 +63,8 @@ class SmtpExpenseExporter(ExpenseExporter):
         msg["Reply-To"] = expense_report.recipient.email
         msg.set_content(html_body, subtype="html")
 
+        pdf_output.add_html(html_body)
+
         for receipt in receipts or []:
             mime_maintype = "application"
             mime_subtype = "octet-stream"
@@ -68,12 +73,27 @@ class SmtpExpenseExporter(ExpenseExporter):
                 with contextlib.suppress(ValueError):
                     mime_maintype, mime_subtype = content_type.split("/")
 
+            receipt_data = await receipt.read()
+
             msg.add_attachment(
-                await receipt.read(),
+                receipt_data,
                 maintype=mime_maintype,
                 subtype=mime_subtype,
                 filename=receipt.filename,
             )
+
+            if mime_maintype == "image" and mime_subtype in ["png", "jpeg"]:
+                pdf_output.add_image(receipt_data)
+            elif mime_maintype == "application" and mime_subtype == "pdf":
+                pdf_output.add_pdf(receipt_data)
+
+        expense_report_pdf = pdf_output.get_pdf()
+        msg.add_attachment(
+            expense_report_pdf,
+            maintype="application",
+            subtype="pdf",
+            filename=f"{expense_report.date}.{expense_report.id}.pdf",
+        )
 
         if self.settings.test:
             print(html_body)
