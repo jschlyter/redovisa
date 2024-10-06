@@ -1,6 +1,6 @@
 from io import BytesIO
 
-from PyPDF2 import PdfWriter
+from pypdf import PdfWriter
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen.canvas import Canvas
 from xhtml2pdf import pisa

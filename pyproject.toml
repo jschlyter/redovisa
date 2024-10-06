@@ -23,8 +23,8 @@ fakeredis = "^2.23.5"
 fastapi-csrf-protect = "^0.3.4"
 structlog = "^24.4.0"
 pygsheets = "^2.0.6"
-pypdf2 = "^3.0.1"
 xhtml2pdf = {extras = ["pycairo"], version = "^0.2.16"}
+pypdf = "^5.0.1"
 
 [tool.poetry.group.dev.dependencies]
 ruff = ">=0.6.0"
