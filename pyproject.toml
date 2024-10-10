@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "redovisa"
-version = "0.3.0"
+version = "0.4.0"
 description = ""
 authors = ["Jakob Schlyter <jakob@schlyter.se>"]
 readme = "README.md"
@@ -12,8 +12,8 @@ redovisa = "redovisa.server:main"
 python = "^3.12"
 pydantic = "^2.8.2"
 pydantic-settings = "^2.3.4"
-fastapi = "^0.111.0"
-uvicorn = "^0.30.1"
+fastapi = ">=0.111.0"
+uvicorn = ">=0.30.1"
 httpx = "^0.27.0"
 email-validator = "^2.2.0"
 redis = {extras = ["hiredis"], version = "^5.0.1"}
