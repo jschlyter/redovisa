@@ -8,7 +8,6 @@
 <meta charset="utf-8"/>
 <script type="text/javascript" src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script type="text/javascript" src="/static/functions.js"></script>
-<script type="text/javascript" src="/static/capture.js"></script>
 </head>
 
 {% set pattern_amount = "^\\d+(\\.\\d{2})?$" %}
@@ -88,11 +87,8 @@
 
   <tr>
     <th>Bifogade kvitton (PDF eller PNG)</th>
-    <td>
-      <input id="receipts" name="receipts" type="file" required accept="image/png,image/jpeg,application/pdf" multiple="multiple" capture="environment"/>
-    </td>
-    <td colspan=2>
-      <button id="no_capture">Stäng av kamera</button>
+    <td colspan=3>
+      <input id="receipts" name="receipts" type="file" required accept="image/png,image/jpeg,application/pdf" multiple="multiple"/>
     </td>
   </tr>
 
