@@ -16,4 +16,17 @@ function disableSubmitDefault() {
   document.getElementById("submit").disabled = true;
 }
 
+function validateForm() {
+  var form = document.forms["expense"];
+  for (let row = 0; row < 10; row++) {
+    var amount = parseFloat(form[row + ":" + "amount"].value);
+    var account = form[row + ":" + "account"].value;
+    if (amount > 0 && account == "") {
+      alert("Du måste ange konto för alla belopp!");
+      return false;
+    }
+  }
+  return true;
+}
+
 window.onload = disableSubmitDefault;

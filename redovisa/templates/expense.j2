@@ -17,7 +17,7 @@
 <body>
 <h1>Redovisa utlägg för {{ organisation }}</h1>
 
-<form method="post" name="expense" enctype="multipart/form-data">
+<form method="post" name="expense" enctype="multipart/form-data" onsubmit="return validateForm()">
 
   <table>
   <tr>
