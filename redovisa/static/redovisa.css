@@ -37,7 +37,7 @@ input.amount {
     text-align: right;
 }
 
-th.amount, td.amount {
+th.amount_header, td.amount, td.amount_total {
     text-align: right;
 }
 
