@@ -17,7 +17,7 @@
 <body>
 <h1>Redovisa utlägg för {{ organisation }}</h1>
 
-<form method="post" enctype="multipart/form-data">
+<form method="post" name="expense" enctype="multipart/form-data">
 
   <table>
   <tr>
@@ -56,7 +56,7 @@
 
   <tr>
     <td>
-      <select name="{{row}}:account" id="acount">
+      <select name="{{row}}:account" id="account">
         <option value="">Välj konto…</option>
         {% for account, description in accounts.items() %}
         {% if account | int %}
@@ -107,8 +107,8 @@
 
   <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
 
-  <input class="button-4" type="submit" value="Skicka in utläggsrapport">
-  <input class="button-4" type="reset" value="Rensa">
+  <input class="button-4" id="submit" type="submit" value="Skicka in utläggsrapport">
+  <input class="button-4" id="reset"  type="reset" value="Rensa">
 
 </form>
 </body>
