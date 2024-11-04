@@ -9,17 +9,17 @@ function updateForm() {
 
   // ensure account is set where amount > 0
   var form = document.forms["expense"];
-  var missing_required = 0;
+  var missing_required = false;
   for (let row = 0; row < amounts.length; row++) {
     var amount = parseFloat(form[row + ":" + "amount"].value);
     var account = form[row + ":" + "account"].value;
     var description = form[row + ":" + "description"].value;
 
-    if (amount > 0 && account == "") missing_required += 1;
-    if (amount > 0 && description == "") missing_required += 1;
+    if (amount > 0 && (account == "" || description == ""))
+      missing_required = true;
   }
 
-  if (total == 0 || missing_required > 0) {
+  if (total == 0 || missing_required) {
     document.getElementById("submit").disabled = true;
   } else {
     document.getElementById("submit").disabled = false;
