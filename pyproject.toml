@@ -9,7 +9,7 @@ readme = "README.md"
 redovisa = "redovisa.server:main"
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = "^3.13"
 pydantic = "^2.8.2"
 pydantic-settings = "^2.3.4"
 fastapi = ">=0.111.0"
