@@ -15,6 +15,13 @@
 
 <body>
 
+{% if logotype_uri is defined %}
+<img src="{{ logotype_uri }}"
+{% if logotype_width is defined %} width="{{ logotype_width }}"{% endif %}
+{% if logotype_height is defined %} height="{{ logotype_height }}"{% endif %}
+/>
+{% endif %}
+
 <h1>Redovisa utlägg för {{ organisation }}</h1>
 
 <form action="/expense">
