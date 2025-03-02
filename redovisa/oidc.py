@@ -194,7 +194,7 @@ class OidcMiddleware:
 
         state_payload = json.loads(b64d(state.encode()))
         session_id = state_payload["session_id"]
-        if request.cookies[self.cookie] != session_id:
+        if request.cookies.get(self.cookie) != session_id:
             raise HTTPException(status_code=400, detail="Authorization state mismatch")
         login_redirect_uri = state_payload["next"] or self.login_redirect_uri
 
@@ -297,13 +297,7 @@ class OidcMiddleware:
         return f"{self.configuration.authorization_endpoint}?{params}"
 
     def get_token(self, code: str, callback_uri: str) -> dict:
-        authstr = (
-            "Basic "
-            + b64encode(
-                f"{self.client_id}:{
-                    self.client_secret}".encode()
-            ).decode()
-        )
+        authstr = "Basic " + b64encode(f"{self.client_id}:{self.client_secret}".encode()).decode()
         headers = {"Authorization": authstr}
         data = {
             "grant_type": "authorization_code",
