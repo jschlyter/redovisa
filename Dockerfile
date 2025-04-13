@@ -38,4 +38,5 @@ COPY --from=builder /env /env
 COPY --from=builder /app /app
 ENV PYTHONPATH=/app:/env
 ENV PATH=/app/bin
+WORKDIR /conf
 ENTRYPOINT ["redovisa"]
