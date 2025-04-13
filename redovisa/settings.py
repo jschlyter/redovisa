@@ -2,12 +2,7 @@ import uuid
 from os.path import dirname, join
 
 from pydantic import BaseModel, DirectoryPath, EmailStr, Field, FilePath, HttpUrl
-from pydantic_settings import (
-    BaseSettings,
-    PydanticBaseSettingsSource,
-    SettingsConfigDict,
-    TomlConfigSettingsSource,
-)
+from pydantic_settings import BaseSettings, PydanticBaseSettingsSource, SettingsConfigDict, TomlConfigSettingsSource
 
 
 class SmtpSettings(BaseModel):

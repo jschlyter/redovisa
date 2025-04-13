@@ -20,12 +20,7 @@ from cryptojwt.utils import b64d, b64e
 from fastapi import HTTPException, Request
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field
-from uvicorn._types import (
-    ASGI3Application,
-    ASGIReceiveCallable,
-    ASGISendCallable,
-    Scope,
-)
+from uvicorn._types import ASGI3Application, ASGIReceiveCallable, ASGISendCallable, Scope
 
 from .logging import get_logger
 
