@@ -7,7 +7,7 @@ import urllib.parse
 import uuid
 from base64 import b64encode
 from collections.abc import Container
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from json import JSONDecodeError
 from urllib.parse import urljoin
 
@@ -236,7 +236,7 @@ class OidcMiddleware:
         response.set_cookie(
             key=self.cookie,
             value=session.session_id,
-            expires=datetime.fromtimestamp(expires_at, tz=timezone.utc),
+            expires=datetime.fromtimestamp(expires_at, tz=UTC),
         )
 
         return response

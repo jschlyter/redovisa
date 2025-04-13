@@ -1,6 +1,6 @@
 import re
 import uuid
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 
 from pydantic import BaseModel, Field
 
@@ -22,7 +22,7 @@ class Recipient(BaseModel):
 
 class ExpenseReport(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(tz=timezone.utc))
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
     date: date
     items: list[ExpenseItem]
     total_amount: float

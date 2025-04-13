@@ -1,4 +1,4 @@
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 from os.path import dirname, join
 
 from fastapi import APIRouter, Request, UploadFile
@@ -97,7 +97,7 @@ async def submit_expense(request: Request, receipts: list[UploadFile]) -> HTMLRe
     response.set_cookie(
         key=request.app.settings.cookies.recipient_account,
         value=str(expense_report.recipient.account),
-        expires=datetime.now(tz=timezone.utc) + timedelta(days=request.app.settings.cookies.recipient_account_days),
+        expires=datetime.now(tz=UTC) + timedelta(days=request.app.settings.cookies.recipient_account_days),
     )
 
     csrf_protect.unset_csrf_cookie(response)
