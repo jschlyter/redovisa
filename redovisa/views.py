@@ -84,7 +84,12 @@ async def submit_expense(request: Request, receipts: list[UploadFile]) -> HTMLRe
     form = await request.form()
     expense_report = ExpenseReport.from_form(form, session, request.app.settings.context.get("accounts", {}))
 
-    _logger.info("Exporting expense report", expense_report_id=expense_report.id)
+    _logger.info(
+        "Exporting expense report",
+        expense_report_id=expense_report.id,
+        expense_report_receipts=[{"filename": r.filename, "size": r.size} for r in receipts],
+    )
+
     for exporter in request.app.exporters:
         await exporter.export(expense_report=expense_report, request=request, receipts=receipts, logger=_logger)
 
