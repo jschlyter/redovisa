@@ -1,7 +1,7 @@
 [project]
 name = "redovisa"
-version = "0.5.0"
-description = ""
+dynamic = ["version"]
+description = "Redovisa utlägg"
 authors = [{name="Jakob Schlyter", email = "jakob@schlyter.se"}]
 readme = "README.md"
 requires-python = ">=3.13,<4.0"
@@ -37,8 +37,11 @@ dev = [
 ]
 
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "uv-dynamic-versioning"]
 build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
 
 [tool.hatch.build.targets.wheel]
 packages = ["redovisa"]
