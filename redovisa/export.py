@@ -154,10 +154,13 @@ class GoogleSheetExpenseExporter(ExpenseExporter):
     ) -> None:
         logger = logger or self.logger
 
+        expense_report_hash = expense_report.get_report_hash()
+
         self.wks_reports.append_table(
             values=[
                 expense_report.timestamp.strftime("%Y-%m-%d %H.%M.%S"),
                 expense_report.id,
+                expense_report_hash,
                 expense_report.date.strftime("%Y-%m-%d"),
                 expense_report.recipient.name,
                 expense_report.recipient.email,
@@ -169,6 +172,7 @@ class GoogleSheetExpenseExporter(ExpenseExporter):
             self.wks_items.append_table(
                 values=[
                     expense_report.id,
+                    expense_report_hash,
                     item.account,
                     item.account_name,
                     item.description,

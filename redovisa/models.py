@@ -1,6 +1,7 @@
 import re
 import uuid
 from datetime import UTC, date, datetime
+from hashlib import sha256
 
 from pydantic import BaseModel, Field
 
@@ -27,6 +28,10 @@ class ExpenseReport(BaseModel):
     items: list[ExpenseItem]
     total_amount: float
     recipient: Recipient
+
+    def get_report_hash(self) -> str:
+        """Return SHA-256 hash of the report, excluding id and timestamp."""
+        return sha256(self.model_dump_json(exclude={"id", "timestamp"}).encode("utf-8")).hexdigest()
 
     @classmethod
     def from_form(
