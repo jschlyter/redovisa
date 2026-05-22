@@ -447,7 +447,7 @@ class OidcMiddleware:
             return now + JWKSET_REFRESH_DEFAULT_INTERVAL
 
         if expires - now > JWKSET_REFRESH_MAX_INTERVAL:
-            self.logger.warning("JWK set expire to far in the future, trimmed")
+            self.logger.warning("JWK set expires too far in the future, trimmed")
             return now + JWKSET_REFRESH_MAX_INTERVAL
 
         if expires - now < JWKSET_REFRESH_MIN_INTERVAL:
