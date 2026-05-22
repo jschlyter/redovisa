@@ -236,19 +236,6 @@ wheels = [
 ]
 
 [[package]]
-name = "cryptojwt"
-version = "1.11.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "cryptography" },
-    { name = "requests" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/73/85/6de1cadaa68324def632982a983f8498a329c2fe29302e9a3d3bec75bdf5/cryptojwt-1.11.0.tar.gz", hash = "sha256:515a345d3fb091606f293834736d9a72cff932a021a1962f8a8bc6dc0358cfb0", size = 153243, upload-time = "2026-03-24T08:48:21.664Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/a4/f3/815c5e1e110e918c2c431cc9ee0abe79ac24c6a1f012215eb266c5627cad/cryptojwt-1.11.0-py3-none-any.whl", hash = "sha256:156e56b341bb3633e3a0234bab29b3076e3490899510e13b0551dcf0418c814a", size = 90812, upload-time = "2026-03-24T08:48:20.21Z" },
-]
-
-[[package]]
 name = "cssselect2"
 version = "0.9.0"
 source = { registry = "https://pypi.org/simple" }
@@ -570,6 +557,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/df/bf/f7da0350254c0ed7c72f3e33cef02e048281fec7ecec5f032d4aac52226b/jinja2-3.1.6.tar.gz", hash = "sha256:0137fb05990d35f1275a587e9aee6d56da821fc83491a0fb838183be43f66d6d", size = 245115, upload-time = "2025-03-05T20:05:02.478Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/62/a1/3d680cbfd5f4b8f15abc1d571870c5fc3e594bb582bc3b64ea099db13e56/jinja2-3.1.6-py3-none-any.whl", hash = "sha256:85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908daf103ce6d2f67", size = 134899, upload-time = "2025-03-05T20:05:00.369Z" },
+]
+
+[[package]]
+name = "jwcrypto"
+version = "1.5.7"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "cryptography" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/8c/90/f065668004d22715c1940d6e88e4c3afc8ee16d5664e4478d2c8fd23a250/jwcrypto-1.5.7.tar.gz", hash = "sha256:70204d7cca406eda8c82352e3c41ba2d946610dafd19e54403f0a1f4f18633c6", size = 89535, upload-time = "2026-04-07T00:35:36.116Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/72/24/fb7da4d6613de7001feaf540d4b5969c6b5a1c42839043b0196cb13aa057/jwcrypto-1.5.7-py3-none-any.whl", hash = "sha256:729463fefe28b6de5cf1ebfda3e94f1a1b41d2799148ef98a01cb9678ebe2bb0", size = 94799, upload-time = "2026-04-07T00:35:35.085Z" },
 ]
 
 [[package]]
@@ -1167,13 +1167,13 @@ hiredis = [
 name = "redovisa"
 source = { editable = "." }
 dependencies = [
-    { name = "cryptojwt" },
     { name = "email-validator" },
     { name = "fakeredis" },
     { name = "fastapi" },
     { name = "fastapi-csrf-protect" },
     { name = "httpx" },
     { name = "jinja2" },
+    { name = "jwcrypto" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
     { name = "pygsheets" },
@@ -1193,13 +1193,13 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "cryptojwt", specifier = ">=1.9.2" },
     { name = "email-validator", specifier = ">=2.2.0" },
     { name = "fakeredis", specifier = ">=2.23.5" },
     { name = "fastapi", specifier = ">=0.111.0" },
     { name = "fastapi-csrf-protect", specifier = ">=0.3.4" },
     { name = "httpx", specifier = ">=0.27.0" },
     { name = "jinja2", specifier = ">=3.1.4" },
+    { name = "jwcrypto", specifier = ">=1.5.7" },
     { name = "pydantic", specifier = ">=2.8.2" },
     { name = "pydantic-settings", specifier = ">=2.3.4" },
     { name = "pygsheets", specifier = ">=2.0.6" },
