@@ -131,6 +131,59 @@ class OidcMiddleware:
             expires=datetime.fromtimestamp(self._issuer_keys_expires, tz=UTC).isoformat(),
         )
 
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Close the HTTP sessions when the middleware is exited."""
+        self.session.close()
+        return await self.async_session.aclose()
+
+    async def __call__(self, scope: Scope, receive: ASGIReceiveCallable, send: ASGISendCallable) -> None:
+        """
+        ASGI entry point for the middleware, which handles authentication and session management
+        for incoming HTTP requests.
+        """
+
+        if scope["type"] == "http":
+            path = scope.get("path")
+            request = Request(scope)
+
+            if path == self.callback_path:
+                response = await self.callback(request)
+                return await response(scope, receive, send)
+
+            elif path == self.login_path:
+                response = await self.login(request)
+                return await response(scope, receive, send)
+
+            elif path == self.logout_path:
+                response = await self.logout(request)
+                return await response(scope, receive, send)
+
+            session = await self.get_session(request)
+
+            if path in self.excluded_paths:
+                self.logger.debug("Path excluded", path=path)
+            elif self.excluded_re and self.excluded_re.match(path):
+                self.logger.debug("Path excluded via RE", path=path)
+            else:
+                self.logger.debug("Path require authentication", path=path)
+
+                if session is None:
+                    self.logger.info("No session found, redirect to OP login endpoint")
+                    response = await self.login(request, next=path)
+                    return await response(scope, receive, send)
+
+                self.logger.info(
+                    "Found existing session",
+                    session_id=session.session_id,
+                    iss=session.iss,
+                    sub=session.sub,
+                    email=session.email,
+                )
+
+            scope["state"]["session"] = session
+
+        return await self.app(scope, receive, send)
+
     @property
     def configuration(self) -> OidcConfiguration:
         return self._configuration
@@ -192,54 +245,6 @@ class OidcMiddleware:
         except Exception as exc:
             self.logger.error(f"Failed to refresh issuer keys: {exc}")
             self._issuer_keys_expires = time.time() + JWKSET_REFRESH_DEFAULT_INTERVAL
-
-    async def __call__(self, scope: Scope, receive: ASGIReceiveCallable, send: ASGISendCallable) -> None:
-        """
-        ASGI entry point for the middleware, which handles authentication and session management
-        for incoming HTTP requests.
-        """
-
-        if scope["type"] == "http":
-            path = scope.get("path")
-            request = Request(scope)
-
-            if path == self.callback_path:
-                response = await self.callback(request)
-                return await response(scope, receive, send)
-
-            elif path == self.login_path:
-                response = await self.login(request)
-                return await response(scope, receive, send)
-
-            elif path == self.logout_path:
-                response = await self.logout(request)
-                return await response(scope, receive, send)
-
-            session = await self.get_session(request)
-
-            if path in self.excluded_paths:
-                self.logger.debug("Path excluded", path=path)
-            elif self.excluded_re and self.excluded_re.match(path):
-                self.logger.debug("Path excluded via RE", path=path)
-            else:
-                self.logger.debug("Path require authentication", path=path)
-
-                if session is None:
-                    self.logger.info("No session found, redirect to OP login endpoint")
-                    response = await self.login(request, next=path)
-                    return await response(scope, receive, send)
-
-                self.logger.info(
-                    "Found existing session",
-                    session_id=session.session_id,
-                    iss=session.iss,
-                    sub=session.sub,
-                    email=session.email,
-                )
-
-            scope["state"]["session"] = session
-
-        return await self.app(scope, receive, send)
 
     async def callback(self, request: Request) -> RedirectResponse:
         """Handle OIDC callbacks"""
