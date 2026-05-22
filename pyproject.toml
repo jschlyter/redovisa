@@ -21,7 +21,7 @@ dependencies = [
     "xhtml2pdf[pycairo] >= 0.2.16",
     "pypdf >= 5.0.1",
     "jinja2 >= 3.1.4",
-    "jwcrypto>=1.5.7",
+    "jwcrypto >= 1.5.7",
 ]
 
 [project.urls]
