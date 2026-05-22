@@ -425,7 +425,7 @@ class OidcMiddleware:
     def expires_from_response(self, response: httpx.Response) -> float:
         """
         Return the expiration time of the HTTP response based on the Expires header,
-        or None if it cannot be determined.
+        or a default refresh time if it cannot be determined.
         """
 
         if expires := response.headers.get("Expires"):
