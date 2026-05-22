@@ -337,7 +337,14 @@ class OidcMiddleware:
         """Authenticate the user by exchanging the authorization code for a token and optionally fetching user info."""
 
         token = await self.get_token(code, callback_uri)
-        self.logger.debug(f"Received token {token}")
+        self.logger.debug(
+            "Received token response",
+            has_access_token="access_token" in token,
+            has_id_token="id_token" in token,
+            has_refresh_token="refresh_token" in token,
+            token_type=token.get("token_type"),
+            expires_in=token.get("expires_in"),
+        )
 
         if get_user_info:
             access_token = token["access_token"]
