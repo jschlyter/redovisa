@@ -20,7 +20,7 @@ from jwcrypto.common import base64url_decode, base64url_encode
 from jwcrypto.jwk import JWKSet
 from jwcrypto.jwt import JWT
 from pydantic import BaseModel, Field
-from uvicorn._types import ASGI3Application, ASGIReceiveCallable, ASGISendCallable, Scope
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 from .logging import get_logger
 
@@ -69,7 +69,7 @@ class OpenIDConnectException(Exception):
 class OidcMiddleware:
     def __init__(
         self,
-        app: ASGI3Application,
+        app: ASGIApp,
         configuration_uri: str,
         client_id: str,
         client_secret: str,
@@ -105,7 +105,7 @@ class OidcMiddleware:
         self.forbidden_path = forbidden_path
         self.callback_path = callback_path
         self.excluded_paths = set(excluded_paths or [])
-        self.excluded_re = re.compile(excluded_re) if excluded_re else None
+        self.excluded_re: re.Pattern | None = re.compile(excluded_re) if excluded_re else None
         self.redis_client = redis_client or redis.Redis()
         self.users = users
 
@@ -119,9 +119,9 @@ class OidcMiddleware:
         self.session = httpx.Client()
         self.async_session = httpx.AsyncClient()
 
-        self._issuer_keys_expires: float | None = None
         self._configuration = self.get_configuration()
-        self._issuer_keys = self.get_issuer_keys()
+
+        self._issuer_keys, self._issuer_keys_expires = self.get_issuer_keys()
 
         self.logger.info(
             "Read issuer keys",
@@ -131,12 +131,7 @@ class OidcMiddleware:
             expires=datetime.fromtimestamp(self._issuer_keys_expires, tz=UTC).isoformat(),
         )
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """Close the HTTP sessions when the middleware is exited."""
-        self.session.close()
-        return await self.async_session.aclose()
-
-    async def __call__(self, scope: Scope, receive: ASGIReceiveCallable, send: ASGISendCallable) -> None:
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         """
         ASGI entry point for the middleware, which handles authentication and session management
         for incoming HTTP requests.
@@ -207,8 +202,8 @@ class OidcMiddleware:
 
         return OidcConfiguration.model_validate(self.to_dict_or_raise(response))
 
-    def get_issuer_keys(self) -> JWKSet:
-        """Get the JWK set from the issuer's jwks_uri and return it as a JWKSet object."""
+    def get_issuer_keys(self) -> tuple[JWKSet, float]:
+        """Get the JWK set from the issuer's jwks_uri and return it along with its expiration time."""
 
         try:
             response = self.session.get(self.configuration.jwks_uri)
@@ -217,10 +212,7 @@ class OidcMiddleware:
             self.logger.error(f"Error fetching issuer keys: {exc}")
             raise OpenIDConnectException(f"Error fetching issuer keys: {exc}") from exc
 
-        res = JWKSet.from_json(response.text)
-        self._issuer_keys_expires = self.expires_from_response(response)
-
-        return res
+        return JWKSet.from_json(response.text), self.expires_from_response(response)
 
     async def refresh_issuer_keys(self) -> None:
         """Refresh the issuer's JWK set by fetching it from the jwks_uri."""
