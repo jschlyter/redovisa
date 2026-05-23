@@ -301,7 +301,7 @@ class OidcMiddleware:
 
         # create state
         session_id = str(uuid.uuid4())
-        state_payload = {"next": next, "session_id": session_id}
+        state_payload = {"next": self.verify_next(next), "session_id": session_id}
         state = base64url_encode(json.dumps(state_payload).encode())
 
         self.logger.debug("Prepare redirect to OP", redirect_uri=self.callback_uri, state_payload=state_payload)
@@ -455,3 +455,13 @@ class OidcMiddleware:
             return now + JWKSET_REFRESH_MIN_INTERVAL
 
         return expires
+
+    @staticmethod
+    def verify_next(next_url: str | None) -> str | None:
+        """Return next_url only if it is a safe same-origin relative path."""
+        if next_url is None:
+            return None
+        parsed = urllib.parse.urlparse(next_url)
+        if parsed.scheme or parsed.netloc:
+            return None
+        return next_url
