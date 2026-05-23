@@ -240,13 +240,9 @@ class OidcMiddleware:
         state_payload = json.loads(base64url_decode(state))
         session_id = state_payload["session_id"]
         if request.cookies.get(self.cookie) != session_id:
-            self.logger.warning(
-                "Authorization state mismatch",
-                expected=session_id,
-                actual=request.cookies.get(self.cookie),
-            )
+            self.logger.warning("Authorization state mismatch")
             return RedirectResponse(self.login_path)
-        login_redirect_uri = state_payload["next"] or self.login_redirect_uri
+        login_redirect_uri = self.verify_next(state_payload["next"]) or self.login_redirect_uri
 
         claims: dict[str, Any] = await self.authenticate(code, self.callback_uri)
 
