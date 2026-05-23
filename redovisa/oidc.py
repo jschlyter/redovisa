@@ -286,7 +286,12 @@ class OidcMiddleware:
 
         # create state
         session_id = str(uuid.uuid4())
-        state_payload = {"next": self.verify_next(next), "session_id": session_id}
+        sanitized_next: str | None = None
+        if next is not None:
+            sanitized_next = self.verify_next(next)
+            if sanitized_next is None:
+                raise HTTPException(status_code=400, detail="Invalid next URL")
+        state_payload = {"next": sanitized_next, "session_id": session_id}
         state = base64url_encode(json.dumps(state_payload).encode())
 
         self.logger.debug("Prepare redirect to OP", redirect_uri=self.callback_uri, state_payload=state_payload)
