@@ -10,6 +10,7 @@ from base64 import b64encode
 from collections.abc import Container
 from datetime import UTC, datetime
 from json import JSONDecodeError
+from typing import Any
 from urllib.parse import urljoin
 
 import httpx
@@ -19,29 +20,17 @@ from fastapi.responses import RedirectResponse
 from jwcrypto.common import base64url_decode, base64url_encode
 from jwcrypto.jwk import JWKSet
 from jwcrypto.jwt import JWT
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from .logging import get_logger
+from .session import Session, SessionHandler
 
 DEFAULT_SCOPE = ["openid", "email", "profile"]
 
 JWKSET_REFRESH_DEFAULT_INTERVAL = 3600  # 1 hour
 JWKSET_REFRESH_MIN_INTERVAL = 60  # 1 minute
 JWKSET_REFRESH_MAX_INTERVAL = 86400  # 24 hours
-
-
-class Session(BaseModel):
-    session_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    iss: str
-    sub: str
-    email: str
-    name: str
-    claims: dict
-
-    @staticmethod
-    def get_cache_key(session_id: str) -> str:
-        return f"session:{session_id}"
 
 
 class OidcConfiguration(BaseModel):
@@ -106,7 +95,6 @@ class OidcMiddleware:
         self.callback_path = callback_path
         self.excluded_paths = set(excluded_paths or [])
         self.excluded_re: re.Pattern | None = re.compile(excluded_re) if excluded_re else None
-        self.redis_client = redis_client or redis.Redis()
         self.users = users
 
         if forbidden_path:
@@ -130,6 +118,8 @@ class OidcMiddleware:
             oidc_jwks_uri=self.configuration.jwks_uri,
             expires=datetime.fromtimestamp(self._issuer_keys_expires, tz=UTC).isoformat(),
         )
+
+        self.session_handler = SessionHandler(redis_client)
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         """
@@ -250,10 +240,15 @@ class OidcMiddleware:
         state_payload = json.loads(base64url_decode(state))
         session_id = state_payload["session_id"]
         if request.cookies.get(self.cookie) != session_id:
-            raise HTTPException(status_code=400, detail="Authorization state mismatch")
+            self.logger.warning(
+                "Authorization state mismatch",
+                expected=session_id,
+                actual=request.cookies.get(self.cookie),
+            )
+            return RedirectResponse(self.login_path)
         login_redirect_uri = state_payload["next"] or self.login_redirect_uri
 
-        claims: dict[str, str | int] = await self.authenticate(code, self.callback_uri)
+        claims: dict[str, Any] = await self.authenticate(code, self.callback_uri)
 
         self.logger.info("Authenticated", claims=claims)
 
@@ -279,13 +274,7 @@ class OidcMiddleware:
 
         expires_at = int(claims.get("exp", time.time() + self.session_ttl))
 
-        self.redis_client.set(
-            Session.get_cache_key(session.session_id),
-            session.model_dump_json(),
-            exat=expires_at,
-        )
-
-        self.logger.info("Created session", session_id=session.session_id)
+        self.session_handler.create_session(session, expires_at)
 
         response = RedirectResponse(login_redirect_uri)
         response.set_cookie(
@@ -301,7 +290,9 @@ class OidcMiddleware:
 
         # create state
         session_id = str(uuid.uuid4())
-        state_payload = {"next": self.verify_next(next), "session_id": session_id}
+        if self.verify_next(next) is None:
+            raise HTTPException(status_code=400, detail="Invalid next URL")
+        state_payload = {"next": next, "session_id": session_id}
         state = base64url_encode(json.dumps(state_payload).encode())
 
         self.logger.debug("Prepare redirect to OP", redirect_uri=self.callback_uri, state_payload=state_payload)
@@ -309,7 +300,11 @@ class OidcMiddleware:
         self.logger.debug("Redirect to OP", url=redirect_url)
 
         response = RedirectResponse(redirect_url)
-        response.set_cookie(key=self.cookie, value=session_id, max_age=self.auth_ttl)
+        response.set_cookie(
+            key=self.cookie,
+            value=session_id,
+            max_age=self.auth_ttl,
+        )
 
         return response
 
@@ -318,7 +313,7 @@ class OidcMiddleware:
 
         response = RedirectResponse(self.logout_redirect_uri)
         if session_id := request.cookies.get(self.cookie):
-            self.redis_client.delete(Session.get_cache_key(session_id))
+            self.session_handler.delete_session(session_id)
             response.set_cookie(self.cookie, "", expires=0)
 
         return response
@@ -330,10 +325,9 @@ class OidcMiddleware:
         """
 
         if session_id := request.cookies.get(self.cookie):  # noqa
-            if session_data := self.redis_client.get(Session.get_cache_key(session_id)):
-                return Session.model_validate_json(session_data.decode())
+            return self.session_handler.get_session(session_id)
 
-    async def authenticate(self, code: str, callback_uri: str, get_user_info: bool = False) -> dict:
+    async def authenticate(self, code: str, callback_uri: str, get_user_info: bool = False) -> dict[str, Any]:
         """Authenticate the user by exchanging the authorization code for a token and optionally fetching user info."""
 
         token = await self.get_token(code, callback_uri)
@@ -373,7 +367,7 @@ class OidcMiddleware:
         )
         return f"{self.configuration.authorization_endpoint}?{params}"
 
-    async def get_token(self, code: str, callback_uri: str) -> dict:
+    async def get_token(self, code: str, callback_uri: str) -> dict[str, Any]:
         """Exchange the authorization code for a token by making a POST request to the token endpoint."""
 
         authstr = "Basic " + b64encode(f"{self.client_id}:{self.client_secret}".encode()).decode()
@@ -394,7 +388,7 @@ class OidcMiddleware:
 
         return self.to_dict_or_raise(response)
 
-    async def get_user_info(self, access_token: str) -> dict:
+    async def get_user_info(self, access_token: str) -> dict[str, Any]:
         """Fetch user info from the userinfo endpoint using the given access token."""
 
         bearer = f"Bearer {access_token}"
@@ -409,7 +403,7 @@ class OidcMiddleware:
 
         return self.to_dict_or_raise(response)
 
-    def to_dict_or_raise(self, response: httpx.Response) -> dict:
+    def to_dict_or_raise(self, response: httpx.Response) -> dict[str, Any]:
         """Return the JSON-decoded response if the status code is 200, otherwise raise an OpenIDConnectException."""
 
         if response.status_code != 200:
