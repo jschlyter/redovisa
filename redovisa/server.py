@@ -1,7 +1,6 @@
 import argparse
 import logging
 
-import fakeredis
 import pygsheets
 import redis
 import uvicorn
@@ -42,8 +41,10 @@ class Redovisa(FastAPI):
         self.redis_client = (
             redis.StrictRedis(host=self.settings.redis.host, port=self.settings.redis.port)
             if self.settings.redis
-            else fakeredis.FakeRedis()
+            else None
         )
+        if not self.redis_client:
+            self.logger.warning("Redis not configured, sessions will not persist across restarts")
 
         self.exporters = []
 
