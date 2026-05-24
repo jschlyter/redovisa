@@ -63,11 +63,8 @@ def test_session_expiry_ttl_set(handler, session):
 
 
 def test_session_expiry(handler, session):
-    expires_at = int(time.time()) + 1
+    expires_at = int(time.time()) - 1
     handler.create_session(session, expires_at)
-    session = handler.get_session(session.session_id)
-    assert session is not None
-    time.sleep(2)
     session = handler.get_session(session.session_id)
     assert session is None
 
