@@ -2,7 +2,7 @@ import time
 
 import pytest
 
-from redovisa.session import Session, SessionHandler
+from redovisa.oidc.session import Session, SessionHandler
 
 
 @pytest.fixture

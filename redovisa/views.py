@@ -7,7 +7,7 @@ from fastapi_csrf_protect import CsrfProtect
 
 from .logging import BoundLogger
 from .models import ExpenseReport
-from .oidc import Session
+from .oidc.models import Session
 
 router = APIRouter()
 favicon_path = join(dirname(__file__), "static/favicon.ico")

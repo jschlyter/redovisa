@@ -5,7 +5,7 @@ from hashlib import sha256
 
 from pydantic import BaseModel, Field
 
-from .oidc import Session
+from .oidc.session import Session
 
 
 class ExpenseItem(BaseModel):

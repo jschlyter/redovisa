@@ -13,7 +13,7 @@ from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 from . import __version__
 from .export import GoogleSheetExpenseExporter, SmtpExpenseExporter
 from .logging import LoggingMiddleware, get_logger, setup_logging
-from .oidc import OidcMiddleware
+from .oidc.middleware import OidcMiddleware
 from .settings import Settings
 from .users import UsersCollection
 from .views import router as views_router

@@ -1,28 +1,10 @@
-"""Session Handler"""
-
-import uuid
 from datetime import UTC, datetime
-from typing import Any
 
 import fakeredis
 import redis
-from pydantic import BaseModel, Field
 
-from .logging import get_logger
-
-
-class Session(BaseModel):
-    session_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-
-    iss: str
-    sub: str
-    email: str
-    name: str
-    claims: dict[str, Any] = Field(default_factory=dict)
-
-    @staticmethod
-    def get_cache_key(session_id: str) -> str:
-        return f"session:{session_id}"
+from ..logging import get_logger
+from .models import Session
 
 
 class SessionHandler:

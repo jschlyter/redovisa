@@ -1,4 +1,4 @@
-from redovisa.oidc import OidcMiddleware
+from redovisa.oidc.middleware import OidcMiddleware
 
 
 def test_verify_next_good():
