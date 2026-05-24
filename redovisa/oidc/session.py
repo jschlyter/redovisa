@@ -30,7 +30,7 @@ class SessionHandler:
         """Retrieve the session from Redis. Returns None if not found."""
         if session_data := self.redis_client.get(Session.get_cache_key(session_id)):
             self.logger.debug("Get session", session_id=session_id)
-            if isinstance(session_data, bytes | str):
+            if isinstance(session_data, (bytes, str)):
                 return Session.model_validate_json(session_data)
             raise ValueError("Invalid session data type")
         self.logger.debug("Session not found", session_id=session_id)
