@@ -17,8 +17,9 @@ import httpx
 import redis
 from fastapi import HTTPException, Request
 from fastapi.responses import RedirectResponse
-from jwcrypto.common import base64url_decode, base64url_encode
-from jwcrypto.jwk import JWKSet
+from jwcrypto.common import base64url_encode
+from jwcrypto.jwe import JWE
+from jwcrypto.jwk import JWK, JWKSet
 from jwcrypto.jwt import JWT
 from pydantic import BaseModel
 from starlette.types import ASGIApp, Receive, Scope, Send
@@ -75,6 +76,7 @@ class OidcMiddleware:
         logout_redirect_uri: str | None = None,
         excluded_paths: list[str] | None = None,
         excluded_re: str | None = None,
+        state_secret: str | None = None,
         redis_client: redis.Redis | None = None,
         users: Container | None = None,
     ) -> None:
@@ -96,6 +98,11 @@ class OidcMiddleware:
         self.excluded_paths = set(excluded_paths or [])
         self.excluded_re: re.Pattern | None = re.compile(excluded_re) if excluded_re else None
         self.users = users
+        self.state_secret = (
+            JWK(kty="oct", k=base64url_encode(state_secret.encode()))
+            if state_secret
+            else JWK.generate(kty="oct", size=256)
+        )
 
         if forbidden_path:
             self.excluded_paths.add(forbidden_path)
@@ -228,6 +235,32 @@ class OidcMiddleware:
             self.logger.error(f"Failed to refresh issuer keys: {exc}")
             self._issuer_keys_expires = time.time() + JWKSET_REFRESH_DEFAULT_INTERVAL
 
+    def encode_state(self, state_payload: dict[str, Any]) -> str:
+        """Encode the state payload as a base64url string using JWE encryption and return it."""
+        protected_header = {
+            "typ": "JWE",
+            "alg": "A256KW",
+            "enc": "A256CBC-HS512",
+            "kid": self.state_secret.thumbprint(),
+        }
+        jwe = JWE(
+            plaintext=json.dumps(state_payload),
+            protected=json.dumps(protected_header),
+        )
+        jwe.add_recipient(self.state_secret)
+        return jwe.serialize(compact=True)
+
+    def decode_state(self, state: str) -> dict[str, Any]:
+        """Decode the state payload using JWE decryption and return it as a dictionary"""
+        try:
+            jwe = JWE()
+            jwe.deserialize(raw_jwe=state)
+            jwe.decrypt(self.state_secret)
+            return json.loads(jwe.payload)
+        except Exception as exc:
+            self.logger.warning("Failed to decode state", exc_info=exc)
+            raise HTTPException(status_code=400, detail="Invalid authorization state") from exc
+
     async def callback(self, request: Request) -> RedirectResponse:
         """Handle OIDC callbacks"""
 
@@ -237,12 +270,7 @@ class OidcMiddleware:
         if not (state := request.query_params.get("state")):
             raise HTTPException(status_code=400, detail="Authorization state missing")
 
-        try:
-            state_payload = json.loads(base64url_decode(state))
-        except Exception as exc:
-            self.logger.warning("Failed to decode state", exc_info=exc)
-            raise HTTPException(status_code=400, detail="Invalid authorization state") from exc
-
+        state_payload = self.decode_state(state)
         session_id = state_payload["session_id"]
         if request.cookies.get(self.cookie) != session_id:
             self.logger.warning("Authorization state mismatch")
@@ -297,7 +325,7 @@ class OidcMiddleware:
             if sanitized_next is None:
                 raise HTTPException(status_code=400, detail="Invalid next URL")
         state_payload = {"next": sanitized_next, "session_id": session_id}
-        state = base64url_encode(json.dumps(state_payload).encode())
+        state = self.encode_state(state_payload)
 
         self.logger.debug("Prepare redirect to OP", redirect_uri=self.callback_uri, state_payload=state_payload)
         redirect_url = self.get_auth_redirect_uri(self.callback_uri, state=state)

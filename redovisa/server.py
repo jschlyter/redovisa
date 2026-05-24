@@ -83,6 +83,7 @@ class Redovisa(FastAPI):
             login_redirect_uri="/",
             scopes=self.settings.oidc.scopes,
             redis_client=self.redis_client,
+            state_secret=self.settings.oidc.state_secret,
             users=users,
         )
 
