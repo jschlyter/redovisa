@@ -237,7 +237,12 @@ class OidcMiddleware:
         if not (state := request.query_params.get("state")):
             raise HTTPException(status_code=400, detail="Authorization state missing")
 
-        state_payload = json.loads(base64url_decode(state))
+        try:
+            state_payload = json.loads(base64url_decode(state))
+        except Exception as exc:
+            self.logger.warning("Failed to decode state", exc_info=exc)
+            raise HTTPException(status_code=400, detail="Invalid authorization state") from exc
+
         session_id = state_payload["session_id"]
         if request.cookies.get(self.cookie) != session_id:
             self.logger.warning("Authorization state mismatch")
