@@ -21,7 +21,7 @@ class StateHandler:
             self.state_key = JWK.generate(kty="oct", size=256)
 
     def encode(self, payload: dict[str, Any]) -> str:
-        """Encode the state payload as a base64url string using JWE encryption and return it."""
+        """Encode the state payload as a compact JWE string using JWE encryption and return it."""
         protected_header = {
             "typ": "JWE",
             "alg": "A256KW",
