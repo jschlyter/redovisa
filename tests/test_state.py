@@ -9,11 +9,6 @@ def handler():
     return StateHandler()
 
 
-@pytest.fixture
-def handler_with_secret():
-    return StateHandler(secret="testsecretthatis32byteslong12345")
-
-
 def test_init_no_secret():
     h = StateHandler()
     assert h.state_key is not None
