@@ -22,7 +22,6 @@ def test_session_auto_id(session):
 
 def test_session_defaults(session):
     assert session.claims == {}
-    assert session.expires_at is None
 
 
 def test_session_cache_key():
@@ -61,6 +60,16 @@ def test_session_expiry_ttl_set(handler, session):
     handler.create_session(session, expires_at)
     ttl = handler.redis_client.ttl(Session.get_cache_key(session.session_id))
     assert ttl > 0
+
+
+def test_session_expiry(handler, session):
+    expires_at = int(time.time()) + 1
+    handler.create_session(session, expires_at)
+    session = handler.get_session(session.session_id)
+    assert session is not None
+    time.sleep(2)
+    session = handler.get_session(session.session_id)
+    assert session is None
 
 
 def test_session_with_claims(handler):
