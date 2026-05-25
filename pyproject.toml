@@ -34,6 +34,7 @@ redovisa = "redovisa.server:main"
 dev = [
     "pytest>=9.0.3",
     "ruff>=0.15.2",
+    "types-jwcrypto>=1.5.7.20260518",
 ]
 
 [build-system]
