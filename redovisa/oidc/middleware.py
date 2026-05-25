@@ -273,7 +273,7 @@ class OidcMiddleware:
             sanitized_next = self.verify_next(next)
             if sanitized_next is None:
                 raise HTTPException(status_code=400, detail="Invalid next URL")
-        state_payload = {"next": next, "session_id": session_id}
+        state_payload = {"next": sanitized_next, "session_id": session_id}
         state = self.state_handler.encode(state_payload)
 
         self.logger.debug("Prepare redirect to OP", redirect_uri=self.callback_uri, state_payload=state_payload)
