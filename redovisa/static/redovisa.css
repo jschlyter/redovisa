@@ -1,3 +1,9 @@
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
 body {
     font-family: Franklin Gothic Light,Franklin Gothic,ITC Franklin Gothic,Arial,sans-serif;
     color: #003660;
@@ -22,27 +28,80 @@ div.sso_provider {
     text-align: right;
 }
 
-table {
-    border: 1px solid;
-    padding: 10px;
-    margin: 10px;
+/* Form info rows (namn, epost, datum, konton) */
+.form-section {
+    margin: 10px 0;
 }
 
-th {
+.form-row {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 8px;
+    align-items: baseline;
+    padding: 6px 0;
+}
+
+.form-label {
     font-family: Franklin Gothic Medium,Franklin Gothic,ITC Franklin Gothic,Arial,sans-serif;
-    text-align: left;
+    font-weight: bold;
+}
+
+/* Line items grid */
+.line-items {
+    margin: 10px 0;
+}
+
+.line-items-header,
+.line-item,
+.total-row {
+    display: grid;
+    grid-template-columns: 2fr 3fr 110px;
+    gap: 8px;
+    align-items: center;
+    padding: 4px 0;
+}
+
+.line-items-header {
+    font-family: Franklin Gothic Medium,Franklin Gothic,ITC Franklin Gothic,Arial,sans-serif;
+    font-weight: bold;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 6px;
+    margin-bottom: 4px;
+}
+
+.line-items-header span:last-child {
+    text-align: right;
+}
+
+.total-label {
+    font-family: Franklin Gothic Medium,Franklin Gothic,ITC Franklin Gothic,Arial,sans-serif;
+}
+
+.amount_total {
+    text-align: right;
+}
+
+/* Inputs */
+select,
+input[type="text"],
+input[type="date"],
+input[type="file"] {
+    width: 100%;
+    padding: 6px 8px;
+    min-height: 40px;
 }
 
 input.amount {
     text-align: right;
 }
 
-th.amount_header, td.amount, td.amount_total {
-    text-align: right;
+input:invalid#recipient_account, input:invalid#date {
+    color: red;
 }
 
-td.reminder {
+.reminder {
     font-size: 10pt;
+    margin: 4px 10px;
 }
 
 input[type="submit"] {
@@ -55,14 +114,30 @@ input[type="reset"] {
     background-color: darkgray;
 }
 
-input[type="text"] {
-    width: 200px;
-}
+/* Mobile: stack form rows and line item columns */
+@media (max-width: 600px) {
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 2px;
+    }
 
-input[type="text"].amount {
-    width: 100px;
-}
+    .line-items-header {
+        display: none;
+    }
 
-input:invalid#recipient_account, input:invalid#date {
-    color: red;
+    .line-item {
+        grid-template-columns: 1fr;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 8px;
+        margin-bottom: 4px;
+    }
+
+    .total-row {
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .total-row > span:nth-child(2) {
+        display: none;
+    }
 }
