@@ -29,6 +29,7 @@ class OidcSettings(BaseModel):
     auth_ttl: int = Field(default=300, description="Authentication timeout")
     session_ttl: int = Field(default=86400, description="Default session timeout (if not set by OIDC)")
     scopes: list[str] = Field(default=["openid", "email", "profile"])
+    state_secret: str | None = Field(default=None, description="Secret key for encoding OIDC state (optional)")
 
 
 class RedisSettings(BaseModel):

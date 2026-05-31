@@ -1,7 +1,6 @@
 import argparse
 import logging
 
-import fakeredis
 import pygsheets
 import redis
 import uvicorn
@@ -14,7 +13,7 @@ from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 from . import __version__
 from .export import GoogleSheetExpenseExporter, SmtpExpenseExporter
 from .logging import LoggingMiddleware, get_logger, setup_logging
-from .oidc import OidcMiddleware
+from .oidc.middleware import OidcMiddleware
 from .settings import Settings
 from .users import UsersCollection
 from .views import router as views_router
@@ -42,8 +41,10 @@ class Redovisa(FastAPI):
         self.redis_client = (
             redis.StrictRedis(host=self.settings.redis.host, port=self.settings.redis.port)
             if self.settings.redis
-            else fakeredis.FakeRedis()
+            else None
         )
+        if self.redis_client is None:
+            self.logger.warning("Redis not configured, sessions will not persist across restarts")
 
         self.exporters = []
 
@@ -82,6 +83,7 @@ class Redovisa(FastAPI):
             login_redirect_uri="/",
             scopes=self.settings.oidc.scopes,
             redis_client=self.redis_client,
+            state_secret=self.settings.oidc.state_secret,
             users=users,
         )
 
