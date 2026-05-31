@@ -104,3 +104,19 @@
   background-color: #001d35;
   opacity: 8%;
 }
+
+@media (max-width: 600px) {
+  .gsi-material-button {
+    height: 48px;
+    font-size: 16px;
+    padding: 0 16px;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .gsi-material-button .gsi-material-button-icon {
+    height: 24px;
+    min-width: 24px;
+    width: 24px;
+  }
+}

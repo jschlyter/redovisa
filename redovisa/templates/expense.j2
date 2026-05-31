@@ -2,61 +2,50 @@
 
 <head>
 <title>Redovisa</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="/static/redovisa.css">
 <link rel="stylesheet" href="/static/buttons.css">
 <link rel="icon" href="/static/favicon.ico">
-<meta charset="utf-8"/>
 <script type="text/javascript" src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script type="text/javascript" src="/static/functions.js"></script>
 </head>
 
 {% set pattern_amount = "^\\d+(\\.\\d{2})?$" %}
 {% set pattern_account = "^\\d{4}[\\d\\-,\\s]+$" %}
-{% set pattern_date = "^\\d{4}-\\d{2}-\\d{2}$" %}
 
 <body>
 <h1>Redovisa utlägg för {{ organisation }}</h1>
 
 <form method="post" name="expense" enctype="multipart/form-data" onsubmit="return validateForm()">
 
-  <table>
-  <tr>
-    <th>Namn</th>
-    <td colspan=3>
-      {{ session.name }}
-    </td>
-  </tr>
+  <div class="form-section">
+    <div class="form-row">
+      <span class="form-label">Namn</span>
+      <span>{{ session.name }}</span>
+    </div>
+    <div class="form-row">
+      <span class="form-label">Epost</span>
+      <span>{{ session.email }}</span>
+    </div>
+    <div class="form-row">
+      <label class="form-label" for="date">Datum</label>
+      <input id="date" name="date" type="date" required value="{{ date }}"/>
+    </div>
+  </div>
 
-  <tr>
-    <th>Epost</th>
-    <td colspan=3>
-      {{ session.email }}
-    </td>
-  </tr>
+  <hr/>
 
-  <tr>
-    <th>Datum</th>
-    <td colspan=3>
-      <input id="date" name="date" type="text" required type="text" value="{{ date }}" required pattern="{{ pattern_date }}" minlength="10" maxlength="10" size="10"/>
-    </td>
-  </tr>
+  <div class="line-items">
+    <div class="line-items-header">
+      <span>Konto</span>
+      <span>Beskrivning</span>
+      <span>Belopp</span>
+    </div>
 
-  <tr>
-    <td colspan=4><hr/></td>
-  </tr>
-
-  <tr>
-    <th>Konto</th>
-    <th>Beskrivning</th>
-    <th class="amount_header">Belopp</th>
-    <th></th>
-  </tr>
-
-  {% for row in range(10) %}
-
-  <tr>
-    <td>
-      <select name="{{row}}:account" id="account" onblur="updateForm()">
+    {% for row in range(10) %}
+    <div class="line-item">
+      <select name="{{row}}:account" onblur="updateForm()">
         <option value="">Välj konto…</option>
         {% for account, description in accounts.items() %}
         {% if account | int %}
@@ -66,49 +55,36 @@
         {% endif %}
         {% endfor %}
       </select>
-    </td>
-    <td><input name="{{row}}:description" type="text" onblur="updateForm()" class="description" maxlength="132"/></td>
-    <td><input name="{{row}}:amount" type="text" onblur="updateForm()" value="0.00" id="amount" class="amount" pattern="{{ pattern_amount }}"/></td>
-    <td></td>
-  </tr>
+      <input name="{{row}}:description" type="text" onblur="updateForm()" class="description" maxlength="132"/>
+      <input name="{{row}}:amount" type="text" inputmode="decimal" onblur="updateForm()" value="0.00" class="amount" pattern="{{ pattern_amount }}"/>
+    </div>
+    {% endfor %}
 
-  {% endfor %}
+    <div class="total-row">
+      <span class="total-label"><b>Totalsumma</b></span>
+      <span></span>
+      <span class="amount_total"><span id="total">0.00</span> kr</span>
+    </div>
+  </div>
 
-  <tr>
-    <th><b>Totalsumma</b></th>
-    <td></td>
-    <td class="amount_total"><div id="total">0.00</div></td>
-    <td>kr</td>
-  </tr>
+  <hr/>
 
-  <tr>
-    <td colspan=4><hr/></td>
-  </tr>
-
-  <tr>
-    <th>Bifogade kvitton (PDF eller PNG)</th>
-    <td colspan=3>
-      <input id="receipts" name="receipts" type="file" required accept="image/png,image/jpeg,application/pdf" multiple="multiple"/>
-    </td>
-  </tr>
-
-  <tr>
-    <th>Kontonummer</th>
-    <td colspan=3>
-      <input id="recipient_account", name="recipient_account" type="text" value="{{ recipient_account }}" required pattern="{{ pattern_account }}"/>
-    </td>
-  </tr>
-
-  <tr>
-    <td class="reminder" colspan=4>Glöm inte clearingnummer!</td>
-  </tr>
-
-  </table>
+  <div class="form-section">
+    <div class="form-row">
+      <label class="form-label" for="receipts">Bifogade kvitton (PDF eller PNG)</label>
+      <input id="receipts" name="receipts" type="file" required accept="image/png,image/jpeg,application/pdf" multiple/>
+    </div>
+    <div class="form-row">
+      <label class="form-label" for="recipient_account">Kontonummer</label>
+      <input id="recipient_account" name="recipient_account" type="text" value="{{ recipient_account }}" required pattern="{{ pattern_account }}"/>
+    </div>
+    <p class="reminder">Glöm inte clearingnummer!</p>
+  </div>
 
   <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
 
   <input class="button-4" id="submit" type="submit" value="Skicka in utläggsrapport">
-  <input class="button-4" id="reset"  type="reset" value="Rensa">
+  <input class="button-4" id="reset" type="reset" value="Rensa">
 
 </form>
 </body>
