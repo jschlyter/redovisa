@@ -55,7 +55,7 @@ div.sso_provider {
 .line-item,
 .total-row {
     display: grid;
-    grid-template-columns: 2fr 3fr 110px;
+    grid-template-columns: 1fr 3fr 110px;
     gap: 8px;
     align-items: center;
     padding: 4px 0;
