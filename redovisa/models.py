@@ -52,7 +52,7 @@ class ExpenseReport(BaseModel):
                             account=int(account),
                             account_name=accounts.get(account),
                             description=form.get(f"{row}:description"),
-                            amount=float(form.get(f"{row}:amount")),
+                            amount=float(form.get(f"{row}:amount").replace(",", ".")),
                         )
                     )
 
