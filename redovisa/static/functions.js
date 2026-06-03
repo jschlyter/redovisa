@@ -3,7 +3,8 @@ function updateForm() {
   var amounts = document.getElementsByClassName("amount");
   var total = 0;
   for (let i = 0; i < amounts.length; i++) {
-    if (parseFloat(amounts[i].value)) total += parseFloat(amounts[i].value);
+    if (parseFloat(amounts[i].value.replace(",", ".")))
+      total += parseFloat(amounts[i].value.replace(",", "."));
   }
   document.getElementById("total").innerHTML = total.toFixed(2);
 
