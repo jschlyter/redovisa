@@ -13,10 +13,11 @@ from urllib.parse import urljoin
 
 import httpx
 import redis
-from fastapi import HTTPException, Request
-from fastapi.responses import RedirectResponse
 from jwcrypto.jwk import JWKSet
 from jwcrypto.jwt import JWT
+from starlette.exceptions import HTTPException
+from starlette.requests import Request
+from starlette.responses import RedirectResponse
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from ..logging import get_logger
