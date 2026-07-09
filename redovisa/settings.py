@@ -30,6 +30,7 @@ class OidcSettings(BaseModel):
     session_ttl: int = Field(default=86400, description="Default session timeout (if not set by OIDC)")
     scopes: list[str] = Field(default=["openid", "email", "profile"])
     state_secret: str | None = Field(default=None, description="Secret key for encoding OIDC state (optional)")
+    pkce: bool | None = Field(default=None, description="Use PKCE (default: auto-detect from OP metadata)")
 
 
 class RedisSettings(BaseModel):

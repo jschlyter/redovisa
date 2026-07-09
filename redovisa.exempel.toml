@@ -10,6 +10,8 @@ base_uri = "http://localhost:8080"
 configuration_uri = "https://accounts.google.com/.well-known/openid-configuration"
 client_id = "REDACTED"
 client_secret = "REDACTED"
+# Use PKCE; if unset, enabled when the OP advertises S256 support
+#pkce = true
 
 [users]
 file = "users.json"

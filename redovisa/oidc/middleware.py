@@ -1,19 +1,21 @@
 import email.utils
 import json
 import re
+import secrets
 import time
 import urllib.parse
 import uuid
 from base64 import b64encode
 from collections.abc import Container
 from datetime import UTC, datetime
+from hashlib import sha256
 from json import JSONDecodeError
 from typing import Any
 from urllib.parse import urljoin
 
 import httpx
 import redis
-from jwcrypto.common import JWException
+from jwcrypto.common import JWException, base64url_encode
 from jwcrypto.jwk import JWKSet
 from jwcrypto.jwt import JWT
 from starlette.exceptions import HTTPException
@@ -60,6 +62,7 @@ class OidcMiddleware:
         state_secret: str | None = None,
         redis_client: redis.Redis | None = None,
         users: Container | None = None,
+        pkce: bool | None = None,
     ) -> None:
         self.logger = get_logger()
 
@@ -91,6 +94,16 @@ class OidcMiddleware:
         self.async_session = httpx.AsyncClient()
 
         self._configuration = self.get_configuration()
+
+        if pkce is None:
+            self.use_pkce = "S256" in self.configuration.code_challenge_methods_supported
+            self.logger.info(
+                "PKCE auto-detected from OP metadata" if self.use_pkce else "PKCE not advertised by OP, disabled",
+                pkce=self.use_pkce,
+            )
+        else:
+            self.use_pkce = pkce
+            self.logger.info("PKCE explicitly configured", pkce=self.use_pkce)
 
         self._issuer_keys, self._issuer_keys_expires = self.get_issuer_keys()
 
@@ -233,7 +246,12 @@ class OidcMiddleware:
             return RedirectResponse(self.login_path)
         login_redirect_uri = state_payload["next"] or self.login_redirect_uri
 
-        claims: dict[str, Any] = await self.authenticate(code, self.callback_uri)
+        code_verifier = state_payload.get("code_verifier")
+        if self.use_pkce and code_verifier is None:
+            self.logger.warning("PKCE enabled but state carries no code verifier")
+            return RedirectResponse(self.login_path)
+
+        claims: dict[str, Any] = await self.authenticate(code, self.callback_uri, code_verifier=code_verifier)
 
         self.logger.info("Authenticated", claims=claims)
 
@@ -289,10 +307,18 @@ class OidcMiddleware:
             if sanitized_next is None:
                 raise HTTPException(status_code=400, detail="Invalid next URL")
         state_payload = {"next": sanitized_next, "session_id": session_id}
-        state = self.state_handler.encode(state_payload)
 
         self.logger.debug("Prepare redirect to OP", redirect_uri=self.callback_uri, state_payload=state_payload)
-        redirect_url = self.get_auth_redirect_uri(self.callback_uri, state=state)
+
+        auth_params: dict[str, str] = {}
+        if self.use_pkce:
+            code_verifier = secrets.token_urlsafe(32)
+            state_payload["code_verifier"] = code_verifier
+            auth_params["code_challenge"] = base64url_encode(sha256(code_verifier.encode()).digest())
+            auth_params["code_challenge_method"] = "S256"
+
+        state = self.state_handler.encode(state_payload)
+        redirect_url = self.get_auth_redirect_uri(self.callback_uri, state=state, **auth_params)
         self.logger.debug("Redirect to OP", url=redirect_url)
 
         response = RedirectResponse(redirect_url)
@@ -331,10 +357,16 @@ class OidcMiddleware:
         if session_id := request.cookies.get(self.cookie):  # noqa
             return self.session_handler.get_session(session_id)
 
-    async def authenticate(self, code: str, callback_uri: str, get_user_info: bool = False) -> dict[str, Any]:
+    async def authenticate(
+        self,
+        code: str,
+        callback_uri: str,
+        get_user_info: bool = False,
+        code_verifier: str | None = None,
+    ) -> dict[str, Any]:
         """Authenticate the user by exchanging the authorization code for a token and optionally fetching user info."""
 
-        token = await self.get_token(code, callback_uri)
+        token = await self.get_token(code, callback_uri, code_verifier=code_verifier)
         self.logger.debug(
             "Received token response",
             has_access_token="access_token" in token,
@@ -380,7 +412,7 @@ class OidcMiddleware:
         )
         return f"{self.configuration.authorization_endpoint}?{params}"
 
-    async def get_token(self, code: str, callback_uri: str) -> dict[str, Any]:
+    async def get_token(self, code: str, callback_uri: str, code_verifier: str | None = None) -> dict[str, Any]:
         """Exchange the authorization code for a token by making a POST request to the token endpoint."""
 
         authstr = "Basic " + b64encode(f"{self.client_id}:{self.client_secret}".encode()).decode()
@@ -390,6 +422,8 @@ class OidcMiddleware:
             "code": code,
             "redirect_uri": callback_uri,
         }
+        if code_verifier is not None:
+            data["code_verifier"] = code_verifier
         self.logger.debug("Get token", token_endpoint=self.configuration.token_endpoint)
 
         try:

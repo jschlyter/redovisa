@@ -84,6 +84,7 @@ class Redovisa(FastAPI):
             scopes=self.settings.oidc.scopes,
             redis_client=self.redis_client,
             state_secret=self.settings.oidc.state_secret,
+            pkce=self.settings.oidc.pkce,
             users=users,
         )
 
