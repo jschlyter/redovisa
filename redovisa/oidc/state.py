@@ -2,7 +2,6 @@ import json
 from hashlib import sha256
 from typing import Any
 
-from fastapi import HTTPException
 from jwcrypto.common import base64url_encode
 from jwcrypto.jwe import JWE
 from jwcrypto.jwk import JWK
@@ -40,10 +39,7 @@ class StateHandler:
     def decode(self, state: str) -> dict[str, Any]:
         """Decode the state payload using JWE decryption and return it as a dictionary"""
 
-        try:
-            jwe = JWE()
-            jwe.deserialize(raw_jwe=state)
-            jwe.decrypt(self.state_key)
-            return json.loads(jwe.payload)
-        except Exception as exc:
-            raise HTTPException(status_code=400, detail="Invalid authorization state") from exc
+        jwe = JWE()
+        jwe.deserialize(raw_jwe=state)
+        jwe.decrypt(self.state_key)
+        return json.loads(jwe.payload)

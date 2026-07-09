@@ -1,5 +1,5 @@
 import pytest
-from fastapi import HTTPException
+from jwcrypto.jwe import InvalidJWEData
 
 from redovisa.oidc.state import StateHandler
 
@@ -54,30 +54,25 @@ def test_different_secret_cannot_decode():
     h1 = StateHandler(secret="firstsecretthatisatleast32bytes!")
     h2 = StateHandler(secret="secondsecretthatisatleast32bytes")
     token = h1.encode({"nonce": "n1"})
-    with pytest.raises(HTTPException) as exc_info:
+    with pytest.raises(InvalidJWEData):
         h2.decode(token)
-    assert exc_info.value.status_code == 400
 
 
 def test_decode_invalid_token_raises(handler):
-    with pytest.raises(HTTPException) as exc_info:
+    with pytest.raises(InvalidJWEData):
         handler.decode("not.a.valid.jwe.token")
-    assert exc_info.value.status_code == 400
-    assert "state" in exc_info.value.detail.lower()
 
 
 def test_decode_tampered_token_raises(handler):
     token = handler.encode({"nonce": "abc"})
     tampered = token[:-10] + "AAAAAAAAAA"
-    with pytest.raises(HTTPException) as exc_info:
+    with pytest.raises(InvalidJWEData):
         handler.decode(tampered)
-    assert exc_info.value.status_code == 400
 
 
 def test_decode_empty_string_raises(handler):
-    with pytest.raises(HTTPException) as exc_info:
+    with pytest.raises(InvalidJWEData):
         handler.decode("")
-    assert exc_info.value.status_code == 400
 
 
 def test_encode_produces_different_tokens_each_call(handler):
