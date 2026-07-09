@@ -103,6 +103,8 @@ async def submit_expense(request: Request, receipts: list[UploadFile]) -> HTMLRe
         key=request.app.settings.cookies.recipient_account,
         value=str(expense_report.recipient.account),
         expires=datetime.now(tz=UTC) + timedelta(days=request.app.settings.cookies.recipient_account_days),
+        httponly=True,
+        secure=True,
     )
 
     csrf_protect.unset_csrf_cookie(response)

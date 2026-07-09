@@ -50,6 +50,8 @@ class PathSettings(BaseModel):
 
 class CsrfSettings(BaseModel):
     cookie_key: str = "redovisa_csrf_token"
+    cookie_secure: bool = True
+    httponly: bool = True
     secret_key: str = Field(default_factory=lambda: str(uuid.uuid4()))
     token_key: str = "csrf_token"
     token_location: str = "body"

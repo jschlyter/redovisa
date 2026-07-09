@@ -254,7 +254,13 @@ class OidcMiddleware:
         if self.users and session.email not in self.users:
             self.logger.warning("User forbidden", email=session.email)
             response = RedirectResponse(self.forbidden_path)
-            response.set_cookie(self.cookie, "", expires=0)
+            response.set_cookie(
+                self.cookie,
+                "",
+                expires=0,
+                httponly=True,
+                secure=True,
+            )
             return response
 
         expires_at = int(claims.get("exp", time.time() + self.session_ttl))
@@ -266,6 +272,8 @@ class OidcMiddleware:
             key=self.cookie,
             value=session.session_id,
             expires=datetime.fromtimestamp(expires_at, tz=UTC),
+            httponly=True,
+            secure=True,
         )
 
         return response
@@ -292,6 +300,8 @@ class OidcMiddleware:
             key=self.cookie,
             value=session_id,
             max_age=self.auth_ttl,
+            httponly=True,
+            secure=True,
         )
 
         return response
@@ -302,7 +312,13 @@ class OidcMiddleware:
         response = RedirectResponse(self.logout_redirect_uri)
         if session_id := request.cookies.get(self.cookie):
             self.session_handler.delete_session(session_id)
-            response.set_cookie(self.cookie, "", expires=0)
+            response.set_cookie(
+                self.cookie,
+                "",
+                expires=0,
+                httponly=True,
+                secure=True,
+            )
 
         return response
 
