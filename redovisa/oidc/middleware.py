@@ -13,6 +13,7 @@ from urllib.parse import urljoin
 
 import httpx
 import redis
+from jwcrypto.common import JWException
 from jwcrypto.jwk import JWKSet
 from jwcrypto.jwt import JWT
 from starlette.exceptions import HTTPException
@@ -333,11 +334,20 @@ class OidcMiddleware:
         else:
             await self.refresh_issuer_keys()
             id_token = token["id_token"]
-            decoded_jwt = JWT(
-                jwt=id_token,
-                key=self.issuer_keys,
-                algs=self.configuration.id_token_signing_alg_values_supported,
-            )
+            try:
+                decoded_jwt = JWT(
+                    jwt=id_token,
+                    key=self.issuer_keys,
+                    algs=self.configuration.id_token_signing_alg_values_supported,
+                    check_claims={
+                        "iss": self.configuration.issuer,
+                        "aud": self.client_id,
+                        "exp": None,
+                    },
+                )
+            except JWException as exc:
+                self.logger.error(f"ID token validation failed: {exc}")
+                raise OpenIDConnectException(f"ID token validation failed: {exc}") from exc
             return json.loads(decoded_jwt.claims)
 
     def get_auth_redirect_uri(self, callback_uri: str, **kwargs) -> str:
