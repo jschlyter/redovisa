@@ -55,7 +55,7 @@
         {% endif %}
         {% endfor %}
       </select>
-      <input name="{{row}}:description" type="text" onblur="updateForm()" class="description" maxlength="132"/>
+      <input name="{{row}}:description" type="text" onblur="updateForm()" class="description" maxlength="132" placeholder="Beskrivning av vad utlägget avser…"/>
       <input name="{{row}}:amount" type="text" inputmode="decimal" onblur="updateForm()" value="0.00" class="amount" pattern="{{ pattern_amount }}"/>
     </div>
     {% endfor %}
