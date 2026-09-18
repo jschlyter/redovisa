@@ -45,6 +45,12 @@ class Redovisa(FastAPI):
         )
         if self.redis_client is None:
             self.logger.warning("Redis not configured, sessions will not persist across restarts")
+        else:
+            try:
+                self.redis_client.ping()
+                self.logger.info("Redis configured successfully")
+            except redis.ConnectionError:
+                self.logger.warning("Redis configured but not reachable")
 
         self.exporters = []
 
