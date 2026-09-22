@@ -48,7 +48,10 @@ def fill_canvas_with_image(canvas: Canvas, image: Image.Image):
     image_width, image_height = image.size
     if hasattr(image, "_getexif"):
         exif_orientation = image._getexif().get(EXIF_ORIENTATION, 1) if image._getexif() else 1
-        orientation = Orientation(exif_orientation)
+        try:
+            orientation = Orientation(exif_orientation)
+        except ValueError:
+            orientation = Orientation.HORIZONAL_NORMAL
     else:
         orientation = Orientation.HORIZONAL_NORMAL
 
