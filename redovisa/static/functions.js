@@ -16,7 +16,7 @@ function updateForm() {
     var account = form[row + ":" + "account"].value;
     var description = form[row + ":" + "description"].value;
 
-    if (amount > 0 && (account == "" || description == ""))
+    if (amount != 0 && (account == "" || description == ""))
       missing_required = true;
   }
 
