@@ -56,7 +56,7 @@
         {% endfor %}
       </select>
       <input name="{{row}}:description" type="text" onblur="updateForm()" class="description" maxlength="132" placeholder="Beskrivning av vad utlägget avser…"/>
-      <input name="{{row}}:amount" type="text" inputmode="decimal" onblur="updateForm()" value="0.00" class="amount" pattern="{{ pattern_amount }}"/>
+      <input name="{{row}}:amount" type="text" onblur="updateForm()" value="0.00" class="amount" pattern="{{ pattern_amount }}"/>
     </div>
     {% endfor %}
 
@@ -76,7 +76,7 @@
     </div>
     <div class="form-row">
       <label class="form-label" for="recipient_account">Kontonummer</label>
-      <input id="recipient_account" name="recipient_account" type="text" value="{{ recipient_account }}" required pattern="{{ pattern_account }}"/>
+      <input id="recipient_account" name="recipient_account" type="text" inputmode="numeric" value="{{ recipient_account }}" required pattern="{{ pattern_account }}"/>
     </div>
     <p class="reminder">Glöm inte clearingnummer!</p>
   </div>
