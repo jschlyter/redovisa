@@ -15,6 +15,11 @@
 
 <p>Din utläggsrapport har skickats till vår <a href="mailto:{{email}}">kassör</a> ({{name}}) med kopia till dig.</p>
 
+{% if swish_amount is defined %}
+<p>Glöm inte att betala in <b>{{ swish_amount_str }}</b> via Swish.</p>
+<p><a href="{{ swish_app_url }}"><img src="{{ swish_qrcode_url }}" alt="Betala via Swish"/></a></p>
+{% endif %}
+
 <p>Referensnummer {{ expense_report.id }}</p>
 
 <form action="/expense">

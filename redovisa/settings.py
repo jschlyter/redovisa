@@ -77,6 +77,11 @@ class GoogleSettings(BaseModel):
     worksheet_items: str | int
 
 
+class SwishSettings(BaseModel):
+    payee: str = Field(description="Swish payee number")
+    message: str = Field(default="Redovisa", description="Swish payment message")
+
+
 class Settings(BaseSettings):
     oidc: OidcSettings
     redis: RedisSettings | None = None
@@ -89,6 +94,7 @@ class Settings(BaseSettings):
 
     smtp: SmtpSettings | None = None
     google: GoogleSettings | None = None
+    swish: SwishSettings | None = None
 
     model_config = SettingsConfigDict(toml_file="redovisa.toml")
 

@@ -1,13 +1,15 @@
+import urllib.parse
 from datetime import UTC, date, datetime, timedelta
 from os.path import dirname, join
 
-from fastapi import APIRouter, Request, UploadFile
+from fastapi import APIRouter, Request, Response, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi_csrf_protect import CsrfProtect
 
 from .logging import BoundLogger
 from .models import ExpenseReport
 from .oidc.models import Session
+from .swish import SwishImageFormat, get_swish_app_url, get_swish_qrcode_url
 
 router = APIRouter()
 favicon_path = join(dirname(__file__), "static/favicon.ico")
@@ -93,10 +95,44 @@ async def submit_expense(request: Request, receipts: list[UploadFile]) -> HTMLRe
     for exporter in request.app.exporters:
         await exporter.export(expense_report=expense_report, request=request, receipts=receipts, logger=_logger)
 
+    if request.app.settings.swish and expense_report.total_amount < 0:
+        swish_payee = request.app.settings.swish.payee
+        swish_message = f"{request.app.settings.swish.message} ({expense_report.recipient.name})"
+        swish_amount = abs(expense_report.total_amount)
+
+        swish_app_url = get_swish_app_url(
+            payee=swish_payee,
+            amount=swish_amount,
+            message=swish_message,
+        )
+        swish_qrcode_url = "/swish/qrcode.png?" + urllib.parse.urlencode(
+            {
+                "amount": swish_amount,
+                "message": swish_message,
+            }
+        )
+    else:
+        swish_amount = None
+        swish_app_url = None
+        swish_qrcode_url = None
+
     response = request.app.templates.TemplateResponse(
         request=request,
         name="submitted.j2",
-        context={"expense_report": expense_report, **request.app.settings.context},
+        context={
+            "expense_report": expense_report,
+            **(
+                {
+                    "swish_amount": swish_amount,
+                    "swish_amount_str": f"{swish_amount:0.2f} kr",
+                    "swish_app_url": swish_app_url,
+                    "swish_qrcode_url": swish_qrcode_url,
+                }
+                if swish_amount is not None
+                else {}
+            ),
+            **request.app.settings.context,
+        },
     )
 
     response.set_cookie(
@@ -110,3 +146,15 @@ async def submit_expense(request: Request, receipts: list[UploadFile]) -> HTMLRe
     csrf_protect.unset_csrf_cookie(response)
 
     return response
+
+
+@router.get("/swish/qrcode.png")
+async def generate_swish_qrcode(request: Request, amount: float, message: str) -> Response:
+    qrcode_bytes = get_swish_qrcode_url(
+        payee=request.app.settings.swish.payee,
+        amount=amount,
+        message=message,
+        format=SwishImageFormat.PNG,
+        transparent=True,
+    )
+    return Response(content=qrcode_bytes, media_type="image/png")
