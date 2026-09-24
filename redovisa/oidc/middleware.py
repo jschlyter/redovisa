@@ -13,7 +13,7 @@ from json import JSONDecodeError
 from typing import Any
 from urllib.parse import urljoin
 
-import httpx
+import httpx2
 import redis
 from jwcrypto.common import JWException, base64url_encode
 from jwcrypto.jwk import JWKSet
@@ -90,8 +90,8 @@ class OidcMiddleware:
         self.login_redirect_uri = login_redirect_uri or self.base_uri
         self.logout_redirect_uri = logout_redirect_uri or self.base_uri
 
-        self.session = httpx.Client()
-        self.async_session = httpx.AsyncClient()
+        self.session = httpx2.Client(http2=True)
+        self.async_session = httpx2.AsyncClient(http2=True)
 
         self._configuration = self.get_configuration()
 
@@ -183,7 +183,7 @@ class OidcMiddleware:
         try:
             response = self.session.get(self.configuration_uri)
             response.raise_for_status()
-        except httpx.HTTPStatusError as exc:
+        except httpx2.HTTPStatusError as exc:
             self.logger.error(f"Error fetching OIDC configuration: {exc}")
             raise OpenIDConnectException(f"Error fetching OIDC configuration: {exc}") from exc
 
@@ -195,7 +195,7 @@ class OidcMiddleware:
         try:
             response = self.session.get(self.configuration.jwks_uri)
             response.raise_for_status()
-        except httpx.HTTPStatusError as exc:
+        except httpx2.HTTPStatusError as exc:
             self.logger.error(f"Error fetching issuer keys: {exc}")
             raise OpenIDConnectException(f"Error fetching issuer keys: {exc}") from exc
 
@@ -429,7 +429,7 @@ class OidcMiddleware:
         try:
             response = await self.async_session.post(self.configuration.token_endpoint, data=data, headers=headers)
             response.raise_for_status()
-        except httpx.HTTPStatusError as exc:
+        except httpx2.HTTPStatusError as exc:
             self.logger.error(f"Error fetching token: {exc}")
             raise OpenIDConnectException(f"Error fetching token: {exc}") from exc
 
@@ -444,13 +444,13 @@ class OidcMiddleware:
         try:
             response = await self.async_session.get(self.configuration.userinfo_endpoint, headers=headers)
             response.raise_for_status()
-        except httpx.HTTPStatusError as exc:
+        except httpx2.HTTPStatusError as exc:
             self.logger.error(f"Error fetching user info: {exc}")
             raise OpenIDConnectException(f"Error fetching user info: {exc}") from exc
 
         return self.to_dict_or_raise(response)
 
-    def to_dict_or_raise(self, response: httpx.Response) -> dict[str, Any]:
+    def to_dict_or_raise(self, response: httpx2.Response) -> dict[str, Any]:
         """Return the JSON-decoded response if the status code is 200, otherwise raise an OpenIDConnectException."""
 
         if response.status_code != 200:
@@ -463,7 +463,7 @@ class OidcMiddleware:
             self.logger.error("Unable to decode JSON")
             raise OpenIDConnectException("Was not able to retrieve data from the response") from exc
 
-    def expires_from_response(self, response: httpx.Response) -> float:
+    def expires_from_response(self, response: httpx2.Response) -> float:
         """
         Return the expiration time of the HTTP response based on the Expires header,
         or a default refresh time if it cannot be determined.
