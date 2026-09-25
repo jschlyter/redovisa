@@ -11,7 +11,7 @@
 <script type="text/javascript" src="/static/functions.js"></script>
 </head>
 
-{% set pattern_amount = "^\-?\\d+(([\\.,]\\d{2})?)$" %}
+{% set pattern_amount = "^-?\\d+(([\\.,]\\d{2})?)$" %}
 {% set pattern_account = "^\\d{4}[\\d\\-,\\s]+$" %}
 
 <body>
@@ -61,8 +61,7 @@
     {% endfor %}
 
     <div class="total-row">
-      <span class="total-label"><b>Totalsumma</b></span>
-      <span></span>
+      <span class="total-label"><b id="total-label">Totalsumma</b></span>
       <span class="amount_total"><span id="total">0.00</span> kr</span>
     </div>
   </div>

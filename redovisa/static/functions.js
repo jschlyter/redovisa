@@ -25,6 +25,16 @@ function updateForm() {
   } else {
     document.getElementById("submit").disabled = false;
   }
+
+  if (total > 0) {
+    document.getElementById("total-label").innerHTML =
+      "Totalsumma som betalas ut";
+    document.getElementById("total").innerHTML = total.toFixed(2);
+  } else {
+    document.getElementById("total-label").innerHTML =
+      "Totalsumma att betala in";
+    document.getElementById("total").innerHTML = (-total).toFixed(2);
+  }
 }
 
 function disableSubmitDefault() {
