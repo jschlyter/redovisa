@@ -54,5 +54,6 @@ subject = "Redovisning av utlägg"
 #worksheet_items = 1
 
 #[swish]
-#payee = "90510"
+#payee_name = "Fröken ur"
+#payee_number = "90510"
 #message = "Redovisning av utlägg"

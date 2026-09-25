@@ -78,7 +78,8 @@ class GoogleSettings(BaseModel):
 
 
 class SwishSettings(BaseModel):
-    payee: str = Field(description="Swish payee number")
+    payee_name: str = Field(default="Redovisa", description="Swish payee name")
+    payee_number: str = Field(description="Swish payee number")
     message: str = Field(default="Redovisa", description="Swish payment message")
 
 

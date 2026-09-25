@@ -95,3 +95,13 @@ def get_swish_qrcode_url(
     response = httpx2.post(SWISH_API_QRCODE_URL, json=params)
     response.raise_for_status()
     return response.content
+
+
+def format_swish_payee(s: str, size: int = 3, sep: str = " ") -> str:
+    """Format a Swish payee string in groups of `size` digits from the right, separated by `sep`."""
+
+    head = len(s) % size
+    parts = [s[:head]] if head else []
+    parts += [s[i : i + size] for i in range(head, len(s), size)]
+
+    return sep.join(parts)

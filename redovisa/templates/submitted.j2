@@ -16,7 +16,10 @@
 <p>Din utläggsrapport har skickats till vår <a href="mailto:{{email}}">kassör</a> ({{name}}) med kopia till dig.</p>
 
 {% if swish_amount is defined %}
-<p>Glöm inte att betala in <b>{{ swish_amount_str }}</b> via Swish.</p>
+<p><b>Glöm inte att betala överskottet på {{ swish_amount_str }} via Swish till {{ swish_payee_number_str }} ({{ swish_payee_name }}).</b></p>
+
+<p>Skanna eller klicka på QR-koden nedan för att starta Swish på din telefon:</p>
+
 <p><a href="{{ swish_app_url }}"><img src="{{ swish_qrcode_url }}" alt="Betala via Swish"/></a></p>
 {% endif %}
 
