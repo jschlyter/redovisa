@@ -33,7 +33,7 @@ th.amount, td.amount {
     <th>Kontonummer</th>
     <td>{{ expense_report.recipient.account or "" }}</td>
   </tr>
-{% else %}
+{% elif expense_report.total_amount < 0 %}
   <tr>
     <th>Kontonummer</th>
     <td><i>Återbetalning via Swish</i></td>
@@ -43,15 +43,22 @@ th.amount, td.amount {
     <th>Datum</th>
     <td>{{ expense_report.date }}</td>
   </tr>
-  <tr>
 {% if expense_report.total_amount > 0 %}
+  <tr>
     <th>Totalsumma att betala ut</th>
     <td>{{ "%0.2f" | format(expense_report.total_amount | float) }} kr</td>
-{% else %}
+  </tr>
+{% elif expense_report.total_amount < 0 %}
+  <tr>
     <th>Totalsumma att betala in</th>
     <td>{{ "%0.2f" | format(- expense_report.total_amount | float) }} kr</td>
-{% endif %}
   </tr>
+{% else %}
+  <tr>
+    <th>Totalsumma</th>
+    <td>{{ "%0.2f" | format(expense_report.total_amount | float) }} kr</td>
+  </tr>
+{% endif %}
 </table></p>
 
 

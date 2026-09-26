@@ -39,7 +39,7 @@ def get_swish_app_url(
     return SWISH_APP_URL + "?" + urllib.parse.urlencode(params)
 
 
-def get_swish_qrcode_url(
+async def get_swish_qrcode_url(
     payee: str | None = None,
     amount: float | None = None,
     message: str | None = None,
@@ -92,8 +92,10 @@ def get_swish_qrcode_url(
         **({"transparent": transparent} if transparent else {}),
     }
 
-    response = httpx2.post(SWISH_API_QRCODE_URL, json=params)
-    response.raise_for_status()
+    async with httpx2.AsyncClient() as client:
+        response = await client.post(SWISH_API_QRCODE_URL, json=params)
+        response.raise_for_status()
+
     return response.content
 
 

@@ -6,7 +6,6 @@ function updateForm() {
     if (parseFloat(amounts[i].value.replace(",", ".")))
       total += parseFloat(amounts[i].value.replace(",", "."));
   }
-  document.getElementById("total").innerHTML = total.toFixed(2);
 
   // ensure account is set where amount > 0
   var form = document.forms["expense"];

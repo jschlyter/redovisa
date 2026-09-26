@@ -100,7 +100,7 @@ async def submit_expense(request: Request, receipts: list[UploadFile]) -> HTMLRe
         swish_payee_number = request.app.settings.swish.payee_number
         swish_payee_number_str = format_swish_payee(swish_payee_number)
         swish_message = f"{request.app.settings.swish.message} ({expense_report.recipient.name})"
-        swish_amount = abs(expense_report.total_amount)
+        swish_amount = round(abs(expense_report.total_amount), 2)
 
         swish_app_url = get_swish_app_url(
             payee=swish_payee_number,
@@ -155,11 +155,17 @@ async def submit_expense(request: Request, receipts: list[UploadFile]) -> HTMLRe
 
 @router.get("/swish/qrcode.png")
 async def generate_swish_qrcode(request: Request, amount: float, message: str) -> Response:
-    qrcode_bytes = get_swish_qrcode_url(
+    """Generate a Swish QR code as a PNG image."""
+
+    if not request.app.settings.swish:
+        return Response(status_code=404)
+
+    qrcode_bytes = await get_swish_qrcode_url(
         payee=request.app.settings.swish.payee_number,
         amount=amount,
         message=message,
         format=SwishImageFormat.PNG,
         transparent=True,
     )
+
     return Response(content=qrcode_bytes, media_type="image/png")

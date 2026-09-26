@@ -2,8 +2,9 @@ import re
 import uuid
 from datetime import UTC, date, datetime
 from hashlib import sha256
+from typing import Self
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from .oidc.models import Session
 
@@ -32,6 +33,13 @@ class ExpenseReport(BaseModel):
     def get_report_hash(self) -> str:
         """Return SHA-256 hash of the report, excluding id and timestamp."""
         return sha256(self.model_dump_json(exclude={"id", "timestamp"}).encode("utf-8")).hexdigest()
+
+    @model_validator(mode="after")
+    def check_total_amount_and_recipient_account(self) -> Self:
+        """Check that the total amount and recipient account are consistent."""
+        if self.total_amount >= 0 and self.recipient.account is None:
+            raise ValueError("Recipient account must be set when total amount is non-negative")
+        return self
 
     @classmethod
     def from_form(
