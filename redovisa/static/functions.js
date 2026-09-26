@@ -30,10 +30,16 @@ function updateForm() {
     document.getElementById("total-label").innerHTML =
       "Totalsumma att betala in";
     document.getElementById("total").innerHTML = (-total).toFixed(2);
+    document.getElementById("recipient_account").required = false;
+    document.getElementById("recipient_account_row").style.display = "none";
+    document.getElementById("clearing_reminder").style.display = "none";
   } else {
     document.getElementById("total-label").innerHTML =
       "Totalsumma som betalas ut";
     document.getElementById("total").innerHTML = total.toFixed(2);
+    document.getElementById("recipient_account").required = true;
+    document.getElementById("recipient_account_row").style.display = "";
+    document.getElementById("clearing_reminder").style.display = "";
   }
 }
 

@@ -77,7 +77,7 @@
       <label class="form-label" for="recipient_account">Kontonummer</label>
       <input id="recipient_account" name="recipient_account" type="text" inputmode="numeric" value="{{ recipient_account }}" required pattern="{{ pattern_account }}"/>
     </div>
-    <p class="reminder">Glöm inte clearingnummer!</p>
+    <p class="reminder" id="clearing_reminder">Glöm inte clearingnummer!</p>
   </div>
 
   <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>

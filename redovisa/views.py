@@ -99,7 +99,6 @@ async def submit_expense(request: Request, receipts: list[UploadFile]) -> HTMLRe
         swish_payee_name = request.app.settings.swish.payee_name
         swish_payee_number = request.app.settings.swish.payee_number
         swish_payee_number_str = format_swish_payee(swish_payee_number)
-
         swish_message = f"{request.app.settings.swish.message} ({expense_report.recipient.name})"
         swish_amount = abs(expense_report.total_amount)
 
@@ -143,7 +142,7 @@ async def submit_expense(request: Request, receipts: list[UploadFile]) -> HTMLRe
 
     response.set_cookie(
         key=request.app.settings.cookies.recipient_account,
-        value=str(expense_report.recipient.account),
+        value=str(expense_report.recipient.account) if expense_report.recipient.account else "",
         expires=datetime.now(tz=UTC) + timedelta(days=request.app.settings.cookies.recipient_account_days),
         httponly=True,
         secure=True,

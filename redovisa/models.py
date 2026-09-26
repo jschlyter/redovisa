@@ -18,7 +18,7 @@ class ExpenseItem(BaseModel):
 class Recipient(BaseModel):
     name: str
     email: str
-    account: int
+    account: int | None
 
 
 class ExpenseReport(BaseModel):
@@ -56,6 +56,11 @@ class ExpenseReport(BaseModel):
                         )
                     )
 
+        if recipient_account := form.get("recipient_account"):
+            account = int(re.sub(r"[^\d]", "", recipient_account))
+        else:
+            account = None
+
         return cls(
             date=form["date"],
             items=items,
@@ -63,6 +68,6 @@ class ExpenseReport(BaseModel):
             recipient=Recipient(
                 name=session.name,
                 email=session.email,
-                account=int(re.sub(r"[^\d]", "", form["recipient_account"])),
+                account=account,
             ),
         )
