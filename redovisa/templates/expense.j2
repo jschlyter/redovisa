@@ -73,7 +73,7 @@
       <label class="form-label" for="receipts">Bifogade kvitton (PDF eller PNG)</label>
       <input id="receipts" name="receipts" type="file" required accept="image/png,image/jpeg,application/pdf" multiple/>
     </div>
-    <div class="form-row">
+    <div class="form-row" id="recipient_account_row">
       <label class="form-label" for="recipient_account">Kontonummer</label>
       <input id="recipient_account" name="recipient_account" type="text" inputmode="numeric" value="{{ recipient_account }}" required pattern="{{ pattern_account }}"/>
     </div>
