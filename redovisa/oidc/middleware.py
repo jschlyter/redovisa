@@ -15,6 +15,7 @@ from urllib.parse import urljoin
 
 import httpx2
 import redis
+from fastapi import status
 from jwcrypto.common import JWException, base64url_encode
 from jwcrypto.jwk import JWKSet
 from jwcrypto.jwt import JWT
@@ -229,16 +230,16 @@ class OidcMiddleware:
         """Handle OIDC callbacks"""
 
         if not (code := request.query_params.get("code")):
-            raise HTTPException(status_code=400, detail="Authorization code missing")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Authorization code missing")
 
         if not (state := request.query_params.get("state")):
-            raise HTTPException(status_code=400, detail="Authorization state missing")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Authorization state missing")
 
         try:
             state_payload = self.state_handler.decode(state)
         except Exception as exc:
             self.logger.error(f"Failed to decode state: {exc}")
-            raise HTTPException(status_code=400, detail="Invalid authorization state") from exc
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid authorization state") from exc
 
         session_id = state_payload["session_id"]
         if request.cookies.get(self.cookie) != session_id:
@@ -305,7 +306,7 @@ class OidcMiddleware:
         if next is not None:
             sanitized_next = self.verify_next(next)
             if sanitized_next is None:
-                raise HTTPException(status_code=400, detail="Invalid next URL")
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid next URL")
         state_payload = {"next": sanitized_next, "session_id": session_id}
 
         self.logger.debug("Prepare redirect to OP", redirect_uri=self.callback_uri, state_payload=state_payload)
@@ -453,7 +454,7 @@ class OidcMiddleware:
     def to_dict_or_raise(self, response: httpx2.Response) -> dict[str, Any]:
         """Return the JSON-decoded response if the status code is 200, otherwise raise an OpenIDConnectException."""
 
-        if response.status_code != 200:
+        if response.status_code != status.HTTP_200_OK:
             self.logger.error(f"Returned with status {response.status_code}", status=response.status_code)
             raise OpenIDConnectException(f"Status code {response.status_code} for {response.url}")
 

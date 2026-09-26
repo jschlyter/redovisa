@@ -6,7 +6,6 @@ function updateForm() {
     if (parseFloat(amounts[i].value.replace(",", ".")))
       total += parseFloat(amounts[i].value.replace(",", "."));
   }
-  document.getElementById("total").innerHTML = total.toFixed(2);
 
   // ensure account is set where amount > 0
   var form = document.forms["expense"];
@@ -16,7 +15,7 @@ function updateForm() {
     var account = form[row + ":" + "account"].value;
     var description = form[row + ":" + "description"].value;
 
-    if (amount > 0 && (account == "" || description == ""))
+    if (amount != 0 && (account == "" || description == ""))
       missing_required = true;
   }
 
@@ -24,6 +23,22 @@ function updateForm() {
     document.getElementById("submit").disabled = true;
   } else {
     document.getElementById("submit").disabled = false;
+  }
+
+  if (total < 0) {
+    document.getElementById("total-label").innerHTML =
+      "Totalsumma att betala in";
+    document.getElementById("total").innerHTML = (-total).toFixed(2);
+    document.getElementById("recipient_account").required = false;
+    document.getElementById("recipient_account_row").style.display = "none";
+    document.getElementById("clearing_reminder").style.display = "none";
+  } else {
+    document.getElementById("total-label").innerHTML =
+      "Totalsumma som betalas ut";
+    document.getElementById("total").innerHTML = total.toFixed(2);
+    document.getElementById("recipient_account").required = true;
+    document.getElementById("recipient_account_row").style.display = "";
+    document.getElementById("clearing_reminder").style.display = "";
   }
 }
 

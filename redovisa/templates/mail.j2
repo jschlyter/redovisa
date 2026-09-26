@@ -28,18 +28,37 @@ th.amount, td.amount {
     <th>Epost</th>
     <td>{{ expense_report.recipient.email }}</td>
   </tr>
+{% if expense_report.total_amount > 0 %}
   <tr>
     <th>Kontonummer</th>
-    <td>{{ expense_report.recipient.account }}</td>
+    <td>{{ expense_report.recipient.account or "" }}</td>
   </tr>
+{% elif expense_report.total_amount < 0 %}
+  <tr>
+    <th>Kontonummer</th>
+    <td><i>Återbetalning via Swish</i></td>
+  </tr>
+{% endif %}
   <tr>
     <th>Datum</th>
     <td>{{ expense_report.date }}</td>
   </tr>
+{% if expense_report.total_amount > 0 %}
+  <tr>
+    <th>Totalsumma att betala ut</th>
+    <td>{{ "%0.2f" | format(expense_report.total_amount | float) }} kr</td>
+  </tr>
+{% elif expense_report.total_amount < 0 %}
+  <tr>
+    <th>Totalsumma att betala in</th>
+    <td>{{ "%0.2f" | format(- expense_report.total_amount | float) }} kr</td>
+  </tr>
+{% else %}
   <tr>
     <th>Totalsumma</th>
     <td>{{ "%0.2f" | format(expense_report.total_amount | float) }} kr</td>
   </tr>
+{% endif %}
 </table></p>
 
 
