@@ -2,7 +2,7 @@ import urllib.parse
 from datetime import UTC, date, datetime, timedelta
 from os.path import dirname, join
 
-from fastapi import APIRouter, Request, Response, UploadFile
+from fastapi import APIRouter, Request, Response, UploadFile, status
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi_csrf_protect import CsrfProtect
 
@@ -158,7 +158,7 @@ async def generate_swish_qrcode(request: Request, amount: float, message: str) -
     """Generate a Swish QR code as a PNG image."""
 
     if not request.app.settings.swish:
-        return Response(status_code=404)
+        return Response(status_code=status.HTTP_404_NOT_FOUND)
 
     qrcode_bytes = await get_swish_qrcode_url(
         payee=request.app.settings.swish.payee_number,
