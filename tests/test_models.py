@@ -28,4 +28,4 @@ def test_expense_report():
         total_amount=sum([item.amount for item in items]),
     )
     report_hash = report.get_report_hash()
-    assert report_hash == "79376b90d5df96543e07dc6355cf7162b9d366079945170c0857375112e5f584"
+    assert report_hash == "48841dddcc41d19f55c5ea6f47f9fd257370d9670516c6adebeda89af65764ff"

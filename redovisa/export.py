@@ -164,6 +164,8 @@ class GoogleSheetExpenseExporter(ExpenseExporter):
                 expense_report.date.strftime("%Y-%m-%d"),
                 expense_report.recipient.name,
                 expense_report.recipient.email,
+                expense_report.title,
+                expense_report.description,
                 expense_report.total_amount,
             ]
         )

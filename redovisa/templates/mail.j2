@@ -28,6 +28,18 @@ th.amount, td.amount {
     <th>Epost</th>
     <td>{{ expense_report.recipient.email }}</td>
   </tr>
+{% if expense_report.title %}
+  <tr>
+    <th>Rubrik</th>
+    <td>{{ expense_report.title }}</td>
+  </tr>
+{% endif %}
+{% if expense_report.description %}
+  <tr>
+    <th>Beskrivning</th>
+    <td>{{ expense_report.description }}</td>
+  </tr>
+{% endif %}
 {% if expense_report.total_amount > 0 %}
   <tr>
     <th>Kontonummer</th>

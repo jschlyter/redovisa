@@ -25,6 +25,8 @@ class Recipient(BaseModel):
 class ExpenseReport(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     timestamp: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
+    title: str | None = Field(default=None)
+    description: str | None = Field(default=None)
     date: date
     items: list[ExpenseItem]
     total_amount: float
@@ -70,6 +72,8 @@ class ExpenseReport(BaseModel):
             account = None
 
         return cls(
+            title=form.get("title"),
+            description=form.get("description"),
             date=form["date"],
             items=items,
             total_amount=sum([item.amount for item in items]),

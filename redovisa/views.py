@@ -63,6 +63,8 @@ async def expense_form(request: Request) -> HTMLResponse:
         context={
             "session": session,
             "date": date.today().isoformat(),
+            "title": request.app.settings.context.get("title", "Redovisning av utlägg"),
+            "description": request.app.settings.context.get("description", ""),
             "recipient_account": recipient_account,
             "csrf_token": csrf_token,
             **request.app.settings.context,
