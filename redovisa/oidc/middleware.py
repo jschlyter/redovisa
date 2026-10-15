@@ -274,7 +274,8 @@ class OidcMiddleware:
             self.logger.error("Required claims missing", missing=missing)
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Required claims missing")
 
-        self.logger.info("Authenticated", claims=claims)
+        self.logger.debug("Claims received", claims=claims)
+        self.logger.info("Authenticated", iss=claims.get("iss"), sub=claims.get("sub"), email=claims.get("email"))
 
         if "given_name" in claims and "family_name" in claims:
             name = f"{claims['given_name']} {claims['family_name']}"
