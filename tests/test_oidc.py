@@ -27,6 +27,7 @@ def make_id_token(key: JWK, **claims) -> str:
         "aud": CLIENT_ID,
         "sub": "user123",
         "email": "user@example.com",
+        "email_verified": True,
         "exp": int(time.time()) + 300,
         **claims,
     }
@@ -44,6 +45,7 @@ def make_middleware(key: JWK, id_token: str, use_pkce: bool = False) -> OidcMidd
     middleware.auth_ttl = 300
     middleware.session_ttl = 3600
     middleware.login_path = "/login"
+    middleware.forbidden_path = "/forbidden"
     middleware.callback_uri = CALLBACK_URI
     middleware.login_redirect_uri = "/"
     middleware.users = None
@@ -174,6 +176,20 @@ async def test_callback_pkce_roundtrip(issuer_key):
 
     assert response.status_code == 307
     assert middleware.token_requests == [{"code": "authcode", "code_verifier": code_verifier}]
+
+
+@pytest.mark.asyncio
+async def test_callback_rotates_session_id(issuer_key):
+    middleware = make_middleware(issuer_key, make_id_token(issuer_key), use_pkce=True)
+    response = await middleware.login(None)
+    params, pre_auth_id = login_response_params(response)
+
+    response = await middleware.callback(make_callback_request(params["state"], pre_auth_id))
+
+    cookie = SimpleCookie(response.headers["set-cookie"])[COOKIE].value
+    assert cookie != pre_auth_id
+    assert middleware.session_handler.get_session(pre_auth_id) is None
+    assert middleware.session_handler.get_session(cookie) is not None
 
 
 @pytest.mark.asyncio
