@@ -101,7 +101,7 @@ async def submit_expense(request: Request, receipts: list[UploadFile]) -> HTMLRe
         swish_payee_name = request.app.settings.swish.payee_name
         swish_payee_number = request.app.settings.swish.payee_number
         swish_payee_number_str = format_swish_payee(swish_payee_number)
-        swish_message = f"{request.app.settings.swish.message} ({expense_report.recipient.name})"
+        swish_message = f"{request.app.settings.swish.message} {expense_report.get_short_id()}"
         swish_amount = round(abs(expense_report.total_amount), 2)
 
         swish_app_url = get_swish_app_url(

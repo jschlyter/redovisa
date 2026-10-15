@@ -36,6 +36,10 @@ class ExpenseReport(BaseModel):
         """Return SHA-256 hash of the report, excluding id and timestamp."""
         return sha256(self.model_dump_json(exclude={"id", "timestamp"}).encode("utf-8")).hexdigest()
 
+    def get_short_id(self) -> str:
+        """Return the last 12 characters of the report ID."""
+        return self.id[-12:]
+
     @model_validator(mode="after")
     def check_total_amount_and_recipient_account(self) -> Self:
         """Check that the total amount and recipient account are consistent."""
