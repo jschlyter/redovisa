@@ -261,6 +261,14 @@ class OidcMiddleware:
         else:
             name = str(claims.get("name", ""))
 
+        if claims.get("email_verified") is not True:
+            self.logger.warning("Email not verified", email=claims.get("email"))
+            response = RedirectResponse(self.forbidden_path)
+            response.set_cookie(self.cookie, "", expires=0, httponly=True, secure=True)
+            return response
+        else:
+            self.logger.debug("Email verified", email=claims.get("email"))
+
         session = Session(
             session_id=session_id,
             iss=str(claims["iss"]),
@@ -273,13 +281,7 @@ class OidcMiddleware:
         if self.users and session.email not in self.users:
             self.logger.warning("User forbidden", email=session.email)
             response = RedirectResponse(self.forbidden_path)
-            response.set_cookie(
-                self.cookie,
-                "",
-                expires=0,
-                httponly=True,
-                secure=True,
-            )
+            response.set_cookie(self.cookie, "", expires=0, httponly=True, secure=True)
             return response
 
         expires_at = int(claims.get("exp", time.time() + self.session_ttl))
