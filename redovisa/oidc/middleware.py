@@ -253,6 +253,10 @@ class OidcMiddleware:
             self.logger.warning("PKCE enabled but state carries no code verifier")
             return RedirectResponse(self.login_path)
 
+        if (exp := state_payload.get("exp")) and time.time() > exp:
+            self.logger.warning("Authorization state expired")
+            return RedirectResponse(self.login_path)
+
         claims: dict[str, Any] = await self.authenticate(code, self.callback_uri, code_verifier=code_verifier)
 
         self.logger.info("Authenticated", claims=claims)
@@ -317,8 +321,11 @@ class OidcMiddleware:
 
         auth_params: dict[str, str] = {}
         if self.use_pkce:
+            iat = int(time.time())
             code_verifier = secrets.token_urlsafe(32)
             state_payload["code_verifier"] = code_verifier
+            state_payload["iat"] = iat
+            state_payload["exp"] = iat + self.auth_ttl
             auth_params["code_challenge"] = base64url_encode(sha256(code_verifier.encode()).digest())
             auth_params["code_challenge_method"] = "S256"
 
