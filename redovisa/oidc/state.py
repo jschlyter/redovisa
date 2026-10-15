@@ -39,7 +39,7 @@ class StateHandler:
     def decode(self, state: str) -> dict[str, Any]:
         """Decode the state payload using JWE decryption and return it as a dictionary"""
 
-        jwe = JWE()
+        jwe = JWE(algs=["A256KW", "A256CBC-HS512"])
         jwe.deserialize(raw_jwe=state)
         jwe.decrypt(self.state_key)
         return json.loads(jwe.payload)
