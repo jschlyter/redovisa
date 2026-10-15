@@ -241,8 +241,9 @@ class OidcMiddleware:
             self.logger.error(f"Failed to decode state: {exc}")
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid authorization state") from exc
 
-        session_id = state_payload["session_id"]
-        if request.cookies.get(self.cookie) != session_id:
+        # Pre-auth identifier binding the state to this browser; never used as the session id
+        auth_id = state_payload["session_id"]
+        if request.cookies.get(self.cookie) != auth_id:
             self.logger.warning("Authorization state mismatch")
             return RedirectResponse(self.login_path)
         login_redirect_uri = state_payload["next"] or self.login_redirect_uri
@@ -269,8 +270,9 @@ class OidcMiddleware:
         else:
             self.logger.debug("Email verified", email=claims.get("email"))
 
+        # Issue a fresh session id on authentication to prevent session fixation
         session = Session(
-            session_id=session_id,
+            session_id=secrets.token_urlsafe(32),
             iss=str(claims["iss"]),
             sub=str(claims["sub"]),
             name=name,
