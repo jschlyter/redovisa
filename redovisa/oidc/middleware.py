@@ -157,7 +157,6 @@ class OidcMiddleware:
 
                 self.logger.info(
                     "Found existing session",
-                    session_id=session.session_id,
                     iss=session.iss,
                     sub=session.sub,
                     email=session.email,
@@ -300,7 +299,7 @@ class OidcMiddleware:
             claims=claims,
         )
 
-        if self.users and session.email not in self.users:
+        if self.users is not None and session.email not in self.users:
             self.logger.warning("User forbidden", email=session.email)
             response = RedirectResponse(self.forbidden_path)
             response.set_cookie(self.cookie, "", expires=0, httponly=True, secure=True)
