@@ -306,7 +306,8 @@ class OidcMiddleware:
             response.set_cookie(self.cookie, "", expires=0, httponly=True, secure=True)
             return response
 
-        expires_at = int(claims.get("exp", time.time() + self.session_ttl))
+        # Session ends when the ID token expires, capped at session_ttl
+        expires_at = min(int(claims["exp"]), int(time.time()) + self.session_ttl)
 
         self.session_handler.create_session(session, expires_at)
 

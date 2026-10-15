@@ -27,7 +27,7 @@ class OidcSettings(BaseModel):
     client_secret: str = Field(description="OIDC Client Secret")
     base_uri: HttpUrl = Field(description="Base URI for the app itself")
     auth_ttl: int = Field(default=300, description="Authentication timeout")
-    session_ttl: int = Field(default=86400, description="Default session timeout (if not set by OIDC)")
+    session_ttl: int = Field(default=86400, description="Maximum session lifetime (capped by ID token expiry)")
     scopes: list[str] = Field(default=["openid", "email", "profile"])
     state_secret: str | None = Field(default=None, description="Secret key for encoding OIDC state (optional)")
     pkce: bool | None = Field(default=None, description="Use PKCE (default: auto-detect from OP metadata)")

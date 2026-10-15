@@ -12,7 +12,7 @@ from starlette.requests import Request
 
 from redovisa.logging import get_logger
 from redovisa.oidc.middleware import OidcMiddleware, OpenIDConnectException
-from redovisa.oidc.models import OidcConfiguration
+from redovisa.oidc.models import OidcConfiguration, Session
 from redovisa.oidc.session import SessionHandler
 from redovisa.oidc.state import StateHandler
 
@@ -197,6 +197,22 @@ async def test_callback_rotates_session_id(issuer_key):
     assert cookie != pre_auth_id
     assert middleware.session_handler.get_session(pre_auth_id) is None
     assert middleware.session_handler.get_session(cookie) is not None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("token_lifetime", "expected_lifetime"),
+    [(300, 300), (7200, 3600)],
+)
+async def test_callback_session_lifetime(issuer_key, token_lifetime, expected_lifetime):
+    middleware = make_middleware(issuer_key, make_id_token(issuer_key))
+    params, session_id = await start_login(middleware, issuer_key, exp=int(time.time()) + token_lifetime)
+
+    response = await middleware.callback(make_callback_request(params["state"], session_id))
+
+    cookie = SimpleCookie(response.headers["set-cookie"])[COOKIE].value
+    ttl = middleware.session_handler.redis_client.ttl(Session.get_cache_key(cookie))
+    assert expected_lifetime - 5 <= ttl <= expected_lifetime
 
 
 @pytest.mark.asyncio
