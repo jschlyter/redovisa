@@ -257,7 +257,14 @@ class OidcMiddleware:
             self.logger.warning("Authorization state expired")
             return RedirectResponse(self.login_path)
 
-        claims: dict[str, Any] = await self.authenticate(code, self.callback_uri, code_verifier=code_verifier)
+        try:
+            claims: dict[str, Any] = await self.authenticate(code, self.callback_uri, code_verifier=code_verifier)
+        except OpenIDConnectException as exc:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Authentication failed") from exc
+
+        if missing := [claim for claim in ("iss", "sub", "email") if not claims.get(claim)]:
+            self.logger.error("Required claims missing", missing=missing)
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Required claims missing")
 
         self.logger.info("Authenticated", claims=claims)
 
@@ -389,11 +396,13 @@ class OidcMiddleware:
         )
 
         if get_user_info:
-            access_token = token["access_token"]
+            if not (access_token := token.get("access_token")):
+                raise OpenIDConnectException("Token response carries no access token")
             return await self.get_user_info(access_token=access_token)
         else:
             await self.refresh_issuer_keys()
-            id_token = token["id_token"]
+            if not (id_token := token.get("id_token")):
+                raise OpenIDConnectException("Token response carries no ID token")
             try:
                 decoded_jwt = JWT(
                     jwt=id_token,
@@ -441,7 +450,7 @@ class OidcMiddleware:
         try:
             response = await self.async_session.post(self.configuration.token_endpoint, data=data, headers=headers)
             response.raise_for_status()
-        except httpx2.HTTPStatusError as exc:
+        except httpx2.HTTPError as exc:
             self.logger.error(f"Error fetching token: {exc}")
             raise OpenIDConnectException(f"Error fetching token: {exc}") from exc
 
@@ -456,7 +465,7 @@ class OidcMiddleware:
         try:
             response = await self.async_session.get(self.configuration.userinfo_endpoint, headers=headers)
             response.raise_for_status()
-        except httpx2.HTTPStatusError as exc:
+        except httpx2.HTTPError as exc:
             self.logger.error(f"Error fetching user info: {exc}")
             raise OpenIDConnectException(f"Error fetching user info: {exc}") from exc
 
