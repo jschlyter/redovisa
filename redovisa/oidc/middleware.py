@@ -253,12 +253,21 @@ class OidcMiddleware:
             self.logger.warning("PKCE enabled but state carries no code verifier")
             return RedirectResponse(self.login_path)
 
+        if (nonce := state_payload.get("nonce")) is None:
+            self.logger.warning("State carries no nonce")
+            return RedirectResponse(self.login_path)
+
         if (exp := state_payload.get("exp")) and time.time() > exp:
             self.logger.warning("Authorization state expired")
             return RedirectResponse(self.login_path)
 
         try:
-            claims: dict[str, Any] = await self.authenticate(code, self.callback_uri, code_verifier=code_verifier)
+            claims: dict[str, Any] = await self.authenticate(
+                code,
+                self.callback_uri,
+                code_verifier=code_verifier,
+                nonce=nonce,
+            )
         except OpenIDConnectException as exc:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Authentication failed") from exc
 
@@ -326,7 +335,10 @@ class OidcMiddleware:
 
         self.logger.debug("Prepare redirect to OP", redirect_uri=self.callback_uri, state_payload=state_payload)
 
-        auth_params: dict[str, str] = {}
+        # Bind the ID token to this authorization request
+        nonce = secrets.token_urlsafe(32)
+        state_payload["nonce"] = nonce
+        auth_params: dict[str, str] = {"nonce": nonce}
         if self.use_pkce:
             iat = int(time.time())
             code_verifier = secrets.token_urlsafe(32)
@@ -382,6 +394,7 @@ class OidcMiddleware:
         callback_uri: str,
         get_user_info: bool = False,
         code_verifier: str | None = None,
+        nonce: str | None = None,
     ) -> dict[str, Any]:
         """Authenticate the user by exchanging the authorization code for a token and optionally fetching user info."""
 
@@ -403,16 +416,18 @@ class OidcMiddleware:
             await self.refresh_issuer_keys()
             if not (id_token := token.get("id_token")):
                 raise OpenIDConnectException("Token response carries no ID token")
+            check_claims: dict[str, Any] = {
+                "iss": self.configuration.issuer,
+                "aud": self.client_id,
+                "exp": None,
+                **({"nonce": nonce} if nonce is not None else {}),
+            }
             try:
                 decoded_jwt = JWT(
                     jwt=id_token,
                     key=self.issuer_keys,
                     algs=self.configuration.id_token_signing_alg_values_supported,
-                    check_claims={
-                        "iss": self.configuration.issuer,
-                        "aud": self.client_id,
-                        "exp": None,
-                    },
+                    check_claims=check_claims,
                 )
             except JWException as exc:
                 self.logger.error(f"ID token validation failed: {exc}")

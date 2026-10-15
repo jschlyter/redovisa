@@ -7,6 +7,7 @@ import pytest
 from jwcrypto.common import base64url_encode
 from jwcrypto.jwk import JWK, JWKSet
 from jwcrypto.jwt import JWT
+from starlette.exceptions import HTTPException
 from starlette.requests import Request
 
 from redovisa.logging import get_logger
@@ -65,10 +66,11 @@ def make_middleware(key: JWK, id_token: str, use_pkce: bool = False) -> OidcMidd
     middleware._issuer_keys = jwkset
 
     middleware.token_requests = []
+    middleware.id_token = id_token
 
     async def get_token(code, callback_uri, code_verifier=None):
         middleware.token_requests.append({"code": code, "code_verifier": code_verifier})
-        return {"id_token": id_token}
+        return {"id_token": middleware.id_token}
 
     async def refresh_issuer_keys():
         pass
@@ -128,6 +130,13 @@ def login_response_params(response) -> tuple[dict, str]:
     return params, cookie[COOKIE].value
 
 
+async def start_login(middleware: OidcMiddleware, key: JWK, **claims) -> tuple[dict, str]:
+    """Log in and have the stub OP issue an ID token carrying the request's nonce."""
+    params, session_id = login_response_params(await middleware.login(None))
+    middleware.id_token = make_id_token(key, nonce=params["nonce"], **claims)
+    return params, session_id
+
+
 def make_callback_request(state: str, session_id: str) -> Request:
     return Request(
         {
@@ -168,8 +177,7 @@ async def test_login_without_pkce(issuer_key):
 @pytest.mark.asyncio
 async def test_callback_pkce_roundtrip(issuer_key):
     middleware = make_middleware(issuer_key, make_id_token(issuer_key), use_pkce=True)
-    response = await middleware.login(None)
-    params, session_id = login_response_params(response)
+    params, session_id = await start_login(middleware, issuer_key)
     code_verifier = middleware.state_handler.decode(params["state"])["code_verifier"]
 
     response = await middleware.callback(make_callback_request(params["state"], session_id))
@@ -181,8 +189,7 @@ async def test_callback_pkce_roundtrip(issuer_key):
 @pytest.mark.asyncio
 async def test_callback_rotates_session_id(issuer_key):
     middleware = make_middleware(issuer_key, make_id_token(issuer_key), use_pkce=True)
-    response = await middleware.login(None)
-    params, pre_auth_id = login_response_params(response)
+    params, pre_auth_id = await start_login(middleware, issuer_key)
 
     response = await middleware.callback(make_callback_request(params["state"], pre_auth_id))
 
@@ -190,6 +197,67 @@ async def test_callback_rotates_session_id(issuer_key):
     assert cookie != pre_auth_id
     assert middleware.session_handler.get_session(pre_auth_id) is None
     assert middleware.session_handler.get_session(cookie) is not None
+
+
+@pytest.mark.asyncio
+async def test_callback_invalid_id_token(issuer_key):
+    middleware = make_middleware(issuer_key, make_id_token(issuer_key))
+    params, session_id = await start_login(middleware, issuer_key, aud="other-client")
+
+    with pytest.raises(HTTPException) as exc_info:
+        await middleware.callback(make_callback_request(params["state"], session_id))
+    assert exc_info.value.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_callback_missing_email_claim(issuer_key):
+    middleware = make_middleware(issuer_key, make_id_token(issuer_key))
+    params, session_id = await start_login(middleware, issuer_key, email=None)
+
+    with pytest.raises(HTTPException) as exc_info:
+        await middleware.callback(make_callback_request(params["state"], session_id))
+    assert exc_info.value.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_login_nonce(issuer_key):
+    middleware = make_middleware(issuer_key, make_id_token(issuer_key))
+    params, _ = login_response_params(await middleware.login(None))
+
+    assert params["nonce"]
+    assert middleware.state_handler.decode(params["state"])["nonce"] == params["nonce"]
+
+
+@pytest.mark.asyncio
+async def test_callback_nonce_mismatch(issuer_key):
+    middleware = make_middleware(issuer_key, make_id_token(issuer_key))
+    params, session_id = await start_login(middleware, issuer_key)
+    middleware.id_token = make_id_token(issuer_key, nonce="other-nonce")
+
+    with pytest.raises(HTTPException) as exc_info:
+        await middleware.callback(make_callback_request(params["state"], session_id))
+    assert exc_info.value.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_callback_nonce_missing_in_id_token(issuer_key):
+    middleware = make_middleware(issuer_key, make_id_token(issuer_key))
+    params, session_id = login_response_params(await middleware.login(None))
+
+    with pytest.raises(HTTPException) as exc_info:
+        await middleware.callback(make_callback_request(params["state"], session_id))
+    assert exc_info.value.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_callback_state_without_nonce(issuer_key):
+    middleware = make_middleware(issuer_key, make_id_token(issuer_key))
+    state = middleware.state_handler.encode({"next": None, "session_id": "pre-auth-id"})
+
+    response = await middleware.callback(make_callback_request(state, "pre-auth-id"))
+
+    assert response.headers["location"] == "/login"
+    assert middleware.token_requests == []
 
 
 @pytest.mark.asyncio
