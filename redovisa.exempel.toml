@@ -25,6 +25,12 @@ sso_provider = "Google"
 sso_provider_google = true
 #sso_provider_uri = "https://scoutid.se/"
 #sso_provider_img = "https://cdn.scouterna.net/scoutid/login.png"
+helptext = """
+<p>Om du skall redovisa pengar du tagit emot görs detta genom att ange ett negativt belopp.
+Är totalsumma negativ kommer du få en länk till Swish efter att formuläret skickats in.</p>
+
+<hr/>
+"""
 
 [context.accounts]
 4210 = "Grenkostnad Bäver"

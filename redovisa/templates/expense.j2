@@ -17,6 +17,9 @@
 <body>
 <h1>Redovisa utlägg för {{ organisation }}</h1>
 
+{% if helptext is defined %}
+{{ helptext }}
+{% endif %}
 <form method="post" name="expense" enctype="multipart/form-data" onsubmit="return validateForm()">
 
   <div class="form-section">
