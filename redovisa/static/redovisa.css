@@ -96,8 +96,11 @@ input.amount {
     text-align: right;
 }
 
-input:invalid#recipient_account, input:invalid#date {
+input:invalid#recipient_account, input:invalid#date, input:invalid.amount {
     color: red;
+    border-color: #c00;
+    background-color: #fff0f0;
+    outline-color: #c00;
 }
 
 .reminder {
